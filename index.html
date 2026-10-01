@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="./HouseFlow-icon-1024.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./HouseFlow-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FAF8F4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { margin:0; background:#EFEAE0; transition:background .35s ease; }
+body.lv-dark { background:#0B0D0C; }
+* { transition:background-color .35s ease, color .35s ease, border-color .35s ease, filter .35s ease; }
+.lv-b { filter:blur(.42em); user-select:none; -webkit-user-select:none; }
+body.lv-hide input[type=number]:not([data-nohide]) { filter:blur(7px); }
+a { color:#4F7D61; text-decoration:none; }
+a:hover { color:#2B2A28; }
+input, select, button { outline:none; }
+@keyframes lvArc { from { stroke-dasharray:0 251.3; } to { stroke-dasharray:176 251.3; } }
+@keyframes lvRise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+input:focus, select:focus { border-color:#4F7D61 !important; }
+</style>
+<script type="module">
+  import { initializeApp as init_app } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth as get_auth, signInWithEmailAndPassword as sign_in, onAuthStateChanged as on_auth, signOut as sign_out } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore as get_firestore, initializeFirestore as init_fs, persistentLocalCache as persistent_cache, persistentMultipleTabManager as multi_tab, runTransaction as run_tx, doc as fs_doc, onSnapshot as on_snapshot, setDoc as set_doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  const fb_app = init_app({ apiKey: "AIzaSyACcnJtvb_bfFevbV42ogC_gle-gwaaVlY", authDomain: "livlit-finance.firebaseapp.com", projectId: "livlit-finance", storageBucket: "livlit-finance.firebasestorage.app", messagingSenderId: "910950743567", appId: "1:910950743567:web:8d9e28fcc17eef9bcc1dc4" });
+  let fb_db; try { fb_db = init_fs(fb_app, { localCache: persistent_cache({ tabManager: multi_tab() }) }); } catch (e) { fb_db = get_firestore(fb_app); }
+  const fb_ref = fs_doc(fb_db, "households", "livlit");
+  const fb_auth = get_auth(fb_app);
+  window.__hf = { ref: fb_ref, onSnapshot: on_snapshot, setDoc: set_doc, runTransaction: (fn) => run_tx(fb_db, fn), signIn: (e, p) => sign_in(fb_auth, e, p), signOut: () => sign_out(fb_auth), onAuth: (cb) => on_auth(fb_auth, cb) };
+  window.dispatchEvent(new Event("hf-ready"));
+</script>
+</helmet>
+
+<div style="{{ themeVars }}">
+<div id="lv-root" style="position:relative;min-height:100vh;max-width:430px;margin:0 auto;background:var(--bg);font-family:'Hanken Grotesk',system-ui,sans-serif;color:var(--ink);padding-bottom:calc(110px + env(safe-area-inset-bottom))">
+
+  <div style="position:sticky;top:0;z-index:10;background:color-mix(in srgb, var(--bg) 94%, transparent);backdrop-filter:blur(8px);padding:calc(14px + env(safe-area-inset-top)) 22px 0">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div style="display:flex;align-items:center;gap:9px"><svg width="26" height="26" viewBox="0 0 100 100" style="display:block;flex:none"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="12"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="var(--sage)" stroke-width="12" stroke-linecap="round" stroke-dasharray="176 251.3" transform="rotate(-90 50 50)"></circle></svg><div style="display:flex;align-items:baseline;gap:6px;white-space:nowrap;line-height:1"><span style="font-size:20px;font-weight:600;letter-spacing:-0.03em">LivLit</span><span style="font-size:13px;font-weight:400;color:var(--muted)">finance</span></div></div>
+      <div style="display:flex;align-items:center;gap:2px;font-size:13px;color:var(--muted)"><span style="display:inline-flex;align-items:center;gap:5px;margin-right:6px"><span style="width:7px;height:7px;border-radius:50%;background:{{ syncColor }}"></span>{{ syncLabel }}</span><button onClick="{{ toggleHide }}" style="width:40px;height:40px;border:none;border-radius:50%;background:{{ hideBg }};color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.9)"><sc-if value="{{ hideOff }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></sc-if><sc-if value="{{ hideOn }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle><path d="M4 4l16 16"></path></svg></sc-if></button><button onClick="{{ toggleDark }}" style="width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.9)"><sc-if value="{{ notDark }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></sc-if><sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if></button></div>
+    </div>
+    <div style="display:flex;gap:22px;margin-top:14px;border-bottom:1px solid var(--line)">
+      <sc-for list="{{ topTabs }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.onClick }}" style="border:none;background:none;padding:8px 0 10px;font-family:inherit;font-size:15px;font-weight:500;color:{{ t.color }};border-bottom:2px solid {{ t.line }};margin-bottom:-1px;cursor:pointer">{{ t.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding:28px 22px 24px">
+
+    <!-- POOL -->
+    <sc-if value="{{ showPool }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:36px">
+
+        <div>
+          <div style="font-size:14px;color:var(--muted);font-weight:500">Free to pour</div>
+          <div style="font-size:68px;font-weight:300;letter-spacing:-0.045em;line-height:1.05;margin:4px 0 6px;color:{{ heroColor }}">{{ heroNumber }}</div>
+          <div style="font-size:14px;color:var(--muted)">{{ heroSub }}</div>
+
+          <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin-top:22px;background:var(--line)">
+            <sc-for list="{{ segments }}" as="sg" hint-placeholder-count="3">
+              <div style="width:{{ sg.w }}%;background:{{ sg.color }};flex:none;transition:width .5s ease"></div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:14px">
+            <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:{{ lg.color }};flex:none"></span><span style="color:var(--muted);flex:1;min-width:0">{{ lg.label }}</span><span style="font-variant-numeric:tabular-nums">{{ lg.amount }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasBanner }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ goFlow }}" style="text-align:left;border:none;background:var(--mint);color:var(--mintFg);padding:14px 16px;border-radius:14px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between" style-active="transform:scale(0.98)">
+            <span>{{ bannerText }}</span><span>→</span>
+          </button>
+        </sc-if>
+
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><div style="font-size:13px;font-weight:500;color:var(--muted)">Envelopes</div><div style="font-size:12px;color:var(--muted)">tap one to log a spend</div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px 8px">
+            <sc-for list="{{ rings }}" as="r" hint-placeholder-count="6">
+              <button onClick="{{ r.onClick }}" style="border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit;transition:transform .35s cubic-bezier(.3,1.7,.5,1);transform:scale({{ r.scale }})" style-active="transform:scale(0.94)">
+                <div style="position:relative;width:82px;height:82px">
+                  <svg width="82" height="82" viewBox="0 0 82 82" style="transform:rotate(-90deg);display:block"><circle cx="41" cy="41" r="36" fill="none" stroke="var(--line)" stroke-width="6"></circle><circle cx="41" cy="41" r="36" fill="none" stroke="{{ r.color }}" stroke-width="6" stroke-linecap="round" stroke-opacity="{{ r.dashOpacity }}" stroke-dasharray="{{ r.dash }} 226.2" style="transition:stroke-dasharray .8s ease,stroke .4s"></circle></svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:{{ r.balColor }}">{{ r.short }}</div>
+                </div>
+                <div style="font-size:13px;color:var(--muted)">{{ r.name }}</div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <!-- MONTH -->
+    <sc-if value="{{ showMonth }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ monthTitle }}</div>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ calPrev }}" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line2);background:var(--card);font-size:16px;cursor:pointer;color:var(--ink);opacity:{{ prevOpacity }}">‹</button>
+            <button onClick="{{ calNext }}" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--line2);background:var(--card);font-size:16px;cursor:pointer;color:var(--ink);opacity:{{ nextOpacity }}">›</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div onTouchStart="{{ calTouchStart }}" onTouchEnd="{{ calTouchEnd }}" style="display:grid;grid-template-columns:repeat(7,1fr);touch-action:pan-y">
+          <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+            <button onClick="{{ c.onClick }}" style="height:46px;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;opacity:{{ c.opacity }};font-family:inherit;padding:0">
+              <span style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.ring }}">{{ c.num }}</span>
+              <span style="display:flex;gap:3px;height:5px"><sc-if value="{{ c.bill }}" hint-placeholder-val="{{ false }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ c.billColor }}"></span></sc-if><sc-if value="{{ c.pay }}" hint-placeholder-val="{{ false }}"><span style="width:5px;height:5px;border-radius:50%;background:var(--sage)"></span></sc-if></span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);margin:10px 0 22px"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#D9A05B"></span>bill due</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--sage)"></span>paycheck</span></div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">{{ dayTitle }}</div>
+        <sc-for list="{{ dayItems }}" as="it" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:15px"><span>{{ it.label }}</span><span style="font-variant-numeric:tabular-nums;color:{{ it.color }}">{{ it.amount }}</span></div>
+        </sc-for>
+        <div style="font-size:14px;color:var(--muted);padding-top:6px">{{ dayEmpty }}</div>
+      </div>
+    </sc-if>
+
+    <!-- FLOW -->
+    <sc-if value="{{ showFlow }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:34px">
+        <div>
+          <sc-if value="{{ checkIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:10px;margin-bottom:8px">
+              <select value="{{ postKindValue }}" onChange="{{ setPostKind }}" style="flex:1.4;min-width:0;padding:12px 10px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font-family:inherit;font-weight:500;font-size:15px;color:var(--ink)">
+                <option value="litch1">Litch check #1</option><option value="litch2">Litch check #2</option><option value="litch3">Litch check #3</option><option value="liv15">Liv, 15th</option><option value="livEnd">Liv, month end</option>
+              </select>
+              <input type="number" inputmode="decimal" placeholder="{{ postAmountPlaceholder }}" value="{{ postAmountValue }}" onInput="{{ setPostAmount }}" onChange="{{ setPostAmount }}" style="flex:1;min-width:0;padding:12px 10px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font-family:inherit;font-weight:500;font-size:15px;color:var(--ink)" />
+            </div>
+          </sc-if>
+          <sc-if value="{{ checkActive }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:24px;font-weight:600;letter-spacing:-0.02em">{{ checkTitle }}</div>
+            <div style="font-size:14px;color:var(--muted);margin-top:2px">{{ checkSub }}</div>
+          </sc-if>
+        </div>
+
+        <div>
+          <sc-for list="{{ flowRows }}" as="row" hint-placeholder-count="5">
+            <div style="display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line);opacity:{{ row.opacity }}">
+              <button onClick="{{ row.onTap }}" style="width:28px;height:28px;border-radius:50%;border:1.5px solid {{ row.circleBorder }};background:{{ row.circleBg }};color:var(--onSage);font-size:14px;font-weight:700;cursor:pointer;flex:none;padding:0;font-family:inherit;transition:transform .15s" style-active="transform:scale(0.85)">{{ row.mark }}</button>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;gap:10px"><span style="font-size:16px;font-weight:500">{{ row.label }}</span><span style="font-size:15px;font-variant-numeric:tabular-nums;color:{{ row.tone }}">{{ row.amount }}</span></div>
+                <div style="font-size:13px;color:var(--muted);margin-top:2px">{{ row.note }}</div>
+                <sc-if value="{{ row.showSkip }}" hint-placeholder-val="{{ false }}"><button onClick="{{ row.onSkip }}" style="border:none;background:none;padding:6px 0 0;font-family:inherit;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer">Skip this</button></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ checkIdle }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ startCheck }}" style="padding:16px;border:none;border-radius:16px;background:var(--ink);color:var(--bg);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;transition:transform .15s" style-active="transform:scale(0.98)">Start this check</button>
+        </sc-if>
+        <sc-if value="{{ checkActive }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px">
+            <button onClick="{{ confirmAll }}" style="flex:1;padding:16px;border:1px solid var(--line2);border-radius:16px;background:var(--card);color:var(--ink);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer" style-active="transform:scale(0.98)">Confirm all</button>
+            <button onClick="{{ finishCheck }}" style="flex:1;padding:16px;border:none;border-radius:16px;background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;opacity:{{ finishOpacity }}" style-active="transform:scale(0.98)">Finish</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px">On the way</div>
+            <sc-for list="{{ pendingRows }}" as="p" hint-placeholder-count="2">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)">
+                <div><div style="font-size:15px;font-weight:500">{{ p.label }}</div><div style="font-size:13px;color:var(--muted)">{{ p.sub }}</div></div>
+                <div style="display:flex;align-items:center;gap:12px"><span style="font-variant-numeric:tabular-nums">{{ p.amount }}</span><button onClick="{{ p.onLand }}" style="padding:8px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink)">Arrived</button></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px">Where the rest goes</div>
+          <sc-for list="{{ cascadeItems }}" as="item" hint-placeholder-count="6">
+            <div style="padding:12px 0;border-top:1px solid var(--line);opacity:{{ item.opacity }}">
+              <div style="display:flex;justify-content:space-between;font-size:15px"><span style="font-weight:500">{{ item.label }} <span style="font-size:12px;color:var(--sage);font-weight:600">{{ item.tag }}</span></span><span style="font-variant-numeric:tabular-nums">{{ item.current }}</span></div>
+              <div style="height:4px;border-radius:2px;background:var(--line);margin-top:8px"><div style="height:100%;border-radius:2px;transition:width .5s ease;background:{{ item.barColor }};width:{{ item.progressPct }}%"></div></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:5px">{{ item.target }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- BOOKS -->
+    <sc-if value="{{ showBooks }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;background:var(--line);border-radius:12px;padding:3px;margin-bottom:26px">
+        <sc-for list="{{ booksTabs }}" as="bt" hint-placeholder-count="3">
+          <button onClick="{{ bt.onClick }}" style="flex:1;padding:9px 0;border:none;border-radius:9px;background:{{ bt.bg }};color:var(--ink);font-family:inherit;font-weight:{{ bt.weight }};font-size:14px;cursor:pointer">{{ bt.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <!-- ===== LEDGER ===== -->
+    <sc-if value="{{ showLedger }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:14px;color:var(--muted)">Everything you have logged</div>
+          <button onClick="{{ undoLast }}" style="padding:8px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;opacity:{{ undoOpacity }};color:var(--ink)">{{ undoLabel }}</button>
+        </div>
+        <sc-for list="{{ historyItems }}" as="h" hint-placeholder-count="6">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);gap:8px">
+            <div style="min-width:0"><div style="font-family:inherit;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--muted);">{{ h.when }}</div><div style="font-weight:500;font-size:15px">{{ h.label }}</div></div>
+            <div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-family:inherit;font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:{{ h.color }}">{{ h.amount }}</span>
+              <sc-if value="{{ h.canDelete }}" hint-placeholder-val="{{ false }}"><button onClick="{{ h.onDelete }}" style="width:30px;height:30px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font-size:16px;font-weight:600;cursor:pointer;color:var(--ink)">×</button></sc-if>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noHistory }}" hint-placeholder-val="{{ false }}"><div style="font-family:inherit;font-variant-numeric:tabular-nums;font-size:14px;padding:20px 0;color:var(--muted);">Nothing logged yet.</div></sc-if>
+      </div>
+    </sc-if>
+
+    
+    <!-- ===== ACCOUNTS ===== -->
+    <sc-if value="{{ showAccounts }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:8px">Tap Set on any line to match it to your bank.</div>
+        <button onClick="{{ sec.cas.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Where the rest goes</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.cas.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.cas.chev }}</span></span></button>
+        <sc-if value="{{ sec.cas.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ cascadeItems }}" as="item" hint-placeholder-count="6"><div style="padding:12px 0;border-top:1px solid var(--line);opacity:{{ item.opacity }}"><div style="display:flex;justify-content:space-between;font-size:15px"><span style="font-weight:500">{{ item.label }} <span style="font-size:12px;color:var(--sage);font-weight:600">{{ item.tag }}</span></span><span style="font-variant-numeric:tabular-nums">{{ item.current }}</span></div><div style="height:4px;border-radius:2px;background:var(--line);margin-top:8px"><div style="height:100%;border-radius:2px;transition:width .5s ease;background:{{ item.barColor }};width:{{ item.progressPct }}%"></div></div><div style="font-size:13px;color:var(--muted);margin-top:5px">{{ item.target }}</div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.chk.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Checking</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.chk.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.chk.chev }}</span></span></button>
+        <sc-if value="{{ sec.chk.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ acctChk }}" as="a" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ a.name }}</div><div style="font-size:13px;color:var(--muted)">{{ a.sub }}</div></div><div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-size:15px;font-variant-numeric:tabular-nums;color:{{ a.color }}">{{ a.balance }}</span><sc-if value="{{ a.showPay }}" hint-placeholder-val="{{ false }}"><button onClick="{{ a.onPay }}" style="padding:8px 13px;border:none;background:var(--sage);color:var(--onSage);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Pay</button></sc-if><button onClick="{{ a.onSet }}" style="padding:8px 13px;border:1px solid var(--line2);background:var(--card);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)">Set</button></div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.sav.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Savings</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.sav.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.sav.chev }}</span></span></button>
+        <sc-if value="{{ sec.sav.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ acctSav }}" as="a" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ a.name }}</div><div style="font-size:13px;color:var(--muted)">{{ a.sub }}</div></div><div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-size:15px;font-variant-numeric:tabular-nums;color:{{ a.color }}">{{ a.balance }}</span><sc-if value="{{ a.showPay }}" hint-placeholder-val="{{ false }}"><button onClick="{{ a.onPay }}" style="padding:8px 13px;border:none;background:var(--sage);color:var(--onSage);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Pay</button></sc-if><button onClick="{{ a.onSet }}" style="padding:8px 13px;border:1px solid var(--line2);background:var(--card);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)">Set</button></div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.card.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Credit cards</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.card.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.card.chev }}</span></span></button>
+        <sc-if value="{{ sec.card.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ acctCard }}" as="a" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ a.name }}</div><div style="font-size:13px;color:var(--muted)">{{ a.sub }}</div></div><div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-size:15px;font-variant-numeric:tabular-nums;color:{{ a.color }}">{{ a.balance }}</span><sc-if value="{{ a.showPay }}" hint-placeholder-val="{{ false }}"><button onClick="{{ a.onPay }}" style="padding:8px 13px;border:none;background:var(--sage);color:var(--onSage);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Pay</button></sc-if><button onClick="{{ a.onSet }}" style="padding:8px 13px;border:1px solid var(--line2);background:var(--card);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)">Set</button></div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.env.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Envelopes</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.env.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.env.chev }}</span></span></button>
+        <sc-if value="{{ sec.env.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ acctEnv }}" as="a" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ a.name }}</div><div style="font-size:13px;color:var(--muted)">{{ a.sub }}</div></div><div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-size:15px;font-variant-numeric:tabular-nums;color:{{ a.color }}">{{ a.balance }}</span><sc-if value="{{ a.showPay }}" hint-placeholder-val="{{ false }}"><button onClick="{{ a.onPay }}" style="padding:8px 13px;border:none;background:var(--sage);color:var(--onSage);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Pay</button></sc-if><button onClick="{{ a.onSet }}" style="padding:8px 13px;border:1px solid var(--line2);background:var(--card);border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)">Set</button></div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.bills.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Bills</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.bills.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.bills.chev }}</span></span></button>
+        <sc-if value="{{ sec.bills.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onClick="{{ toggleBillEdit }}" style="padding:8px 14px;border:1px solid var(--line2);border-radius:10px;background:{{ billEditBg }};color:{{ billEditFg }};font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">{{ billEditLabel }}</button></div><sc-if value="{{ billsView }}" hint-placeholder-val="{{ true }}"><div><sc-for list="{{ billsThisMonth }}" as="bill" hint-placeholder-count="5"><button onClick="{{ bill.onToggle }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 0;border:none;border-top:1px solid var(--line);background:none;font-family:inherit;color:var(--ink);cursor:pointer;text-align:left;gap:10px" style-active="opacity:0.6"><span style="font-size:15px;opacity:{{ bill.opacity }};flex:1;min-width:0"><span style="display:inline-block;width:44px;font-size:13px;color:var(--muted)">{{ bill.day }}{{ bill.daySuffix }}</span>{{ bill.name }}<span style="font-size:12px;color:var(--muted);margin-left:8px">{{ bill.note }}</span></span><span style="font-size:15px;font-variant-numeric:tabular-nums;opacity:{{ bill.opacity }}">{{ bill.amount }}</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:10px;background:{{ bill.pillBg }};color:{{ bill.pillFg }};min-width:34px;text-align:center">{{ bill.status }}</span></button></sc-for><div style="font-size:13px;color:var(--muted);padding-top:8px">Tap a bill to mark it paid or due. Bills past their date count as paid unless you mark them due.</div></div></sc-if><sc-if value="{{ billsEdit }}" hint-placeholder-val="{{ false }}"><div><sc-for list="{{ billEditRows }}" as="b" hint-placeholder-count="5"><div style="display:flex;gap:6px;padding:8px 0;border-top:1px solid var(--line);align-items:center"><input type="text" value="{{ b.name }}" onInput="{{ b.onName }}" onChange="{{ b.onName }}" style="flex:1.6;min-width:0;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px" /><input type="number" inputmode="numeric" value="{{ b.day }}" onInput="{{ b.onDay }}" onChange="{{ b.onDay }}" style="width:46px;text-align:center;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px;padding:10px 4px" /><input type="number" inputmode="decimal" value="{{ b.amount }}" onInput="{{ b.onAmount }}" onChange="{{ b.onAmount }}" style="flex:1;min-width:0;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px" /><button onClick="{{ b.onDelete }}" style="width:38px;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-size:18px;cursor:pointer;color:var(--ink);flex:none">×</button></div></sc-for><button onClick="{{ addBill }}" style="width:100%;margin-top:8px;padding:13px;border:1px dashed var(--line2);border-radius:12px;background:transparent;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)">Add a bill</button><div style="font-size:13px;color:var(--muted);margin-top:8px">Name, day of month, amount. Float and Emergency Fund targets follow this list.</div></div></sc-if></div></sc-if>
+        <button onClick="{{ sec.plan.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Plan amounts</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.plan.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.plan.chev }}</span></span></button>
+        <sc-if value="{{ sec.plan.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ cfgRows }}" as="r" hint-placeholder-count="8"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ r.label }}</div><div style="font-size:13px;color:var(--muted)">{{ r.sub }}</div></div><input type="number" inputmode="decimal" value="{{ r.value }}" onInput="{{ r.onInput }}" onChange="{{ r.onInput }}" style="width:100px;text-align:right;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px;flex:none;font-variant-numeric:tabular-nums" /></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.recon.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Match to bank</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.recon.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.recon.chev }}</span></span></button><sc-if value="{{ sec.recon.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><div style="font-size:14px;line-height:1.5;color:var(--muted);margin-bottom:6px">Type what your bank shows for any account. The difference (interest, a missed spend) is shown before you apply anything.</div><sc-for list="{{ reconRows }}" as="rc" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ rc.name }}</div><div style="font-size:13px;color:var(--muted)">App says {{ rc.app }}<span style="color:{{ rc.color }};font-weight:600">{{ rc.diffText }}</span></div></div><input type="number" inputmode="decimal" placeholder="Bank" value="{{ rc.value }}" onInput="{{ rc.onInput }}" onChange="{{ rc.onInput }}" style="width:112px;text-align:right;border:1px solid var(--line2);border-radius:10px;background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px;flex:none;font-variant-numeric:tabular-nums" /></div></sc-for><button onClick="{{ applyRecon }}" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:14px;background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;opacity:{{ reconReady }}" style-active="transform:scale(0.98)">{{ reconLabel }}</button></div></sc-if>
+        <button onClick="{{ sec.backup.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Backup and sync</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.backup.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.backup.chev }}</span></span></button>
+        <sc-if value="{{ sec.backup.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><button onClick="{{ exportBackup }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Download a backup file</button><button onClick="{{ exportCalendar }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Add paydays and bills to Calendar</button><div style="font-size:14px;color:var(--muted);margin-bottom:4px">Daily snapshots, last 7 days</div><sc-for list="{{ snapRows }}" as="sn" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line);gap:8px"><div><div style="font-size:15px;font-weight:500">{{ sn.label }}</div><div style="font-size:13px;color:var(--muted)">{{ sn.sub }}</div></div><button onClick="{{ sn.onRestore }}" style="padding:8px 13px;border:1px solid var(--line2);border-radius:10px;background:{{ sn.btnBg }};color:{{ sn.btnFg }};font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">{{ sn.btn }}</button></div></sc-for><sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ doSignOut }}" style="margin-top:12px;border:none;background:none;padding:0;font-family:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer">Sign out</button></sc-if></div></sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ===== INSIGHTS ===== -->
+    <sc-if value="{{ showInsights }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="padding:20px 20px 22px;border-radius:22px;background:{{ leadBg }};color:{{ leadFg }};margin-bottom:22px">
+          <div style="font-size:13px;font-weight:500;opacity:0.75;margin-bottom:6px">Most worth knowing</div>
+          <div style="font-size:24px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;margin-bottom:8px">{{ leadTitle }}</div>
+          <div style="font-size:15px;line-height:1.5">{{ leadMessage }}</div>
+        </div>
+        <sc-if value="{{ hasRest }}" hint-placeholder-val="{{ false }}"><div>
+          <button onClick="{{ sec.more.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">More to know</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.more.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.more.chev }}</span></span></button>
+          <sc-if value="{{ sec.more.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ restAlerts }}" as="alert" hint-placeholder-count="2"><div style="padding:14px 16px;margin-bottom:10px;background:{{ alert.bg }};border-radius:16px;color:{{ alert.fg }}"><div style="font-weight:600;font-size:15px;margin-bottom:3px">{{ alert.title }}</div><div style="font-size:14px;line-height:1.5">{{ alert.message }}</div></div></sc-for></div></sc-if>
+        </div></sc-if>
+        <button onClick="{{ sec.pay.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Next paychecks</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.pay.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.pay.chev }}</span></span></button>
+        <sc-if value="{{ sec.pay.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ upcomingPaychecks }}" as="pc" hint-placeholder-count="3"><div style="padding:12px 0;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600;font-size:15px">{{ pc.name }}</span><span style="font-size:15px;font-variant-numeric:tabular-nums">{{ pc.amount }}</span></div><div style="font-size:14px;font-weight:500;color:var(--sage);margin:2px 0">{{ pc.date }}</div><div style="font-size:14px;line-height:1.5;color:var(--muted)">{{ pc.allocation }}</div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.fc.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Cascade forecast</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.fc.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.fc.chev }}</span></span></button>
+        <sc-if value="{{ sec.fc.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><div style="font-size:14px;line-height:1.5;color:var(--muted);margin-bottom:6px">{{ surplusNote }}</div><sc-for list="{{ cascadeForecasts }}" as="cf" hint-placeholder-count="4"><div style="padding:12px 0;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600;font-size:15px">{{ cf.goal }}</span><span style="font-size:15px;font-variant-numeric:tabular-nums">{{ cf.remaining }}</span></div><div style="font-size:14px;color:var(--muted);margin-top:2px">{{ cf.note }}</div></div></sc-for></div></sc-if>
+        <button onClick="{{ sec.pace.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Spending pace</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.pace.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.pace.chev }}</span></span></button>
+        <sc-if value="{{ sec.pace.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><sc-for list="{{ paceItems }}" as="pace" hint-placeholder-count="4"><div style="padding:12px 0;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:600;font-size:15px">{{ pace.name }}</span><span style="font-size:14px;font-weight:600;color:{{ pace.color }}">{{ pace.pace }}</span></div><div style="font-size:14px;color:var(--muted);margin-top:2px">{{ pace.note }}</div></div></sc-for></div></sc-if>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- log button -->
+  <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:0;z-index:20;pointer-events:none">
+    <button data-lvocc="1" onClick="{{ openLog }}" style="pointer-events:auto;position:absolute;right:22px;bottom:calc(24px + env(safe-area-inset-bottom));height:58px;padding:0 24px 0 20px;border:none;border-radius:29px;background:var(--ink);color:var(--bg);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;box-shadow:0 8px 24px rgba(43,42,40,0.28);display:flex;align-items:center;gap:10px;transition:transform .15s" style-hover="transform:translateY(-2px)" style-active="transform:scale(0.95)"><span style="font-size:26px;font-weight:300;line-height:1;margin-top:-2px">+</span>Log spend</button>
+    <sc-if value="{{ hasFlash }}" hint-placeholder-val="{{ false }}"><div data-lvocc="1" style="pointer-events:auto;position:absolute;left:22px;right:22px;bottom:calc(96px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:8px 8px 8px 16px;border-radius:14px;font-size:14px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:8px"><span>{{ flash }}</span><button onClick="{{ undoFlash }}" style="border:none;background:rgba(250,248,244,0.14);color:var(--bg);padding:9px 14px;border-radius:10px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Undo</button></div></sc-if>
+  </div>
+
+  <!-- log sheet -->
+  <sc-if value="{{ logOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:40;display:flex;justify-content:center;background:rgba(43,42,40,0.35)">
+      <div onClick="{{ closeLog }}" style="position:absolute;inset:0"></div>
+      <div style="position:absolute;bottom:0;width:100%;max-width:430px;background:var(--bg);border-radius:28px 28px 0 0;padding:14px 22px calc(22px + env(safe-area-inset-bottom));max-height:96vh;overflow:auto">
+        <div style="width:40px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 14px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div style="font-size:14px;color:var(--muted);font-weight:500">Spent</div>
+          <button onClick="{{ closeLog }}" style="border:none;background:none;font-family:inherit;font-size:14px;color:var(--muted);cursor:pointer;padding:0">Close</button>
+        </div>
+        <div style="font-size:60px;font-weight:300;letter-spacing:-0.04em;line-height:1.1;margin:2px 0 14px;font-variant-numeric:tabular-nums" data-nohide="1">{{ amountDisplay }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+          <sc-for list="{{ logEnvChips }}" as="ch" hint-placeholder-count="6">
+            <button onClick="{{ ch.onClick }}" style="padding:9px 14px;border-radius:20px;border:1px solid {{ ch.border }};background:{{ ch.bg }};color:{{ ch.color }};font-family:inherit;font-weight:500;font-size:14px;cursor:pointer;transition:transform .12s" style-active="transform:scale(0.94)">{{ ch.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:12px">
+          <sc-for list="{{ logCardChips }}" as="ch" hint-placeholder-count="4">
+            <button onClick="{{ ch.onClick }}" style="border:none;background:none;padding:4px 0;font-family:inherit;font-size:14px;font-weight:500;color:{{ ch.color }};border-bottom:2px solid {{ ch.line }};cursor:pointer">{{ ch.label }}</button>
+          </sc-for>
+        </div>
+        <input type="text" placeholder="Where? (optional)" value="{{ logMerchant }}" onInput="{{ setMerchant }}" onChange="{{ setMerchant }}" style="width:100%;box-sizing:border-box;border:none;border-bottom:1px solid var(--line2);background:transparent;padding:8px 0 10px;font-family:inherit;font-size:16px;color:var(--ink);margin-bottom:14px;border-radius:0" />
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+            <button onClick="{{ k.onClick }}" style="height:54px;border:none;border-radius:16px;background:var(--key);color:var(--ink);font-family:inherit;font-size:24px;font-weight:400;cursor:pointer;transition:transform .1s,background .1s" style-active="transform:scale(0.92);background:var(--key2)">{{ k.label }}</button>
+          </sc-for>
+        </div>
+        <button onClick="{{ logTransaction }}" style="width:100%;margin-top:14px;padding:17px;border:none;border-radius:18px;background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:17px;cursor:pointer;opacity:{{ logReady }};transition:transform .12s" style-active="transform:scale(0.98)">{{ logButtonLabel }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ askOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:50;display:flex;justify-content:center;background:rgba(43,42,40,0.35)">
+      <div onClick="{{ closeAsk }}" style="position:absolute;inset:0"></div>
+      <div style="position:absolute;bottom:0;width:100%;max-width:430px;background:var(--bg);border-radius:28px 28px 0 0;padding:14px 22px calc(24px + env(safe-area-inset-bottom))">
+        <div style="width:40px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 18px"></div>
+        <div style="font-size:14px;color:var(--muted);font-weight:500">{{ askTitle }}</div>
+        <input type="number" inputmode="decimal" value="{{ askValue }}" onInput="{{ setAsk }}" onChange="{{ setAsk }}" style="width:100%;box-sizing:border-box;border:none;border-bottom:1px solid var(--line2);background:transparent;padding:6px 0 10px;font-family:inherit;font-size:44px;font-weight:300;letter-spacing:-0.03em;color:var(--ink);margin-bottom:20px;border-radius:0;font-variant-numeric:tabular-nums" />
+        <div style="display:flex;gap:10px">
+          <button onClick="{{ closeAsk }}" style="flex:1;padding:16px;border:1px solid var(--line2);border-radius:16px;background:var(--card);color:var(--ink);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer">Cancel</button>
+          <button onClick="{{ saveAsk }}" style="flex:1;padding:16px;border:none;border-radius:16px;background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer" style-active="transform:scale(0.98)">Save</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ needSignIn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:60;display:flex;justify-content:center;background:var(--bg)">
+      <div style="width:100%;max-width:430px;padding:calc(60px + env(safe-area-inset-top)) 28px 28px;box-sizing:border-box">
+        <div style="font-size:28px;font-weight:600;letter-spacing:-0.03em;margin-bottom:6px">Sign in</div>
+        <div style="font-size:15px;color:var(--muted);line-height:1.5;margin-bottom:26px">Your numbers are locked to the two household accounts.</div>
+        <input type="email" placeholder="Email" value="{{ authEmail }}" onInput="{{ setAuthEmail }}" onChange="{{ setAuthEmail }}" style="width:100%;box-sizing:border-box;padding:15px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font-family:inherit;font-size:17px;color:var(--ink);margin-bottom:10px" />
+        <input type="password" placeholder="Password" value="{{ authPass }}" onInput="{{ setAuthPass }}" onChange="{{ setAuthPass }}" style="width:100%;box-sizing:border-box;padding:15px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font-family:inherit;font-size:17px;color:var(--ink);margin-bottom:14px" />
+        <div style="font-size:14px;color:var(--clay);min-height:20px;margin-bottom:8px">{{ authError }}</div>
+        <button onClick="{{ doSignIn }}" style="width:100%;padding:17px;border:none;border-radius:16px;background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:17px;cursor:pointer" style-active="transform:scale(0.98)">Sign in</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ splashOn }}" hint-placeholder-val="{{ true }}">
+    <div onClick="{{ skipSplash }}" style="position:fixed;inset:0;z-index:100;cursor:pointer;font-family:'Hanken Grotesk',system-ui,sans-serif">
+      <div style="position:absolute;inset:0;background:var(--bg);opacity:{{ splashBg }};transition:opacity .6s ease .1s"></div>
+      <div style="position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-110px 0 0 -60px;transform:translate({{ flyX }}px,{{ flyY }}px) scale({{ flyS }});transition:transform .75s cubic-bezier(.6,0,.2,1)">
+        <svg viewBox="0 0 100 100" width="120" height="120" style="display:block;overflow:visible"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="12"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="var(--sage)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 251.3" transform="rotate(-90 50 50)" style="animation:{{ arcAnim }}"></circle></svg>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:50%;margin-top:26px;text-align:center;opacity:{{ splashBg }};transition:opacity .35s ease">
+        <div style="font-size:46px;font-weight:600;letter-spacing:-0.04em;line-height:1;color:var(--ink);animation:{{ wordAnim }}">LivLit</div>
+        <div style="font-size:14px;font-weight:500;letter-spacing:0.32em;text-transform:uppercase;color:var(--sage);padding-left:0.32em;margin-top:8px;animation:{{ subAnim }}">finance</div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;430px&quot;,&quot;height&quot;:&quot;900px&quot;}}">
+class Component extends DCLogic {
+  state = {
+    checking: 1338.11,
+    floatReserved: 633.63,
+    envelopeBalances: { groceries: -103.00, gas: 0.00, grooming: -105.00, lifeF: 100.00, misc: 100.55, homeDecor: 11.05 },
+    savings: { ef: 2303.32, car: 2121.71, family: 150.00, vacation: 223.57, pet: 110.42, house: 0, wedding: 0 },
+    cards: { discover: 299.00, chase: 0, citi: 0 },
+    cardCharges: 0,
+    rentHolding: 0,
+    rentPaidMonth: '2026-09',
+    carRepaymentLeft: 1650.00,
+    efStage: 1,
+    pending: [],
+    check: null,
+    cfg: { groceries: 550, gas: 80, grooming: 300, lifeF: 500, misc: 200, decor: 400, fun: 800, vacation: 125, pet: 100, family: 150, rent: 1475, carRepay: 150, ef2: 300, carTarget: 25000, houseTarget: 35000, weddingTarget: 20000 },
+    bills: [
+      { name: 'Rent', day: 1, amount: 2950.00 },
+      { name: 'Nuuly', day: 1, amount: 106.09 },
+      { name: 'Renters insurance', day: 4, amount: 187.00 },
+      { name: 'Netflix', day: 8, amount: 29.22 },
+      { name: 'Spotify', day: 9, amount: 20.56 },
+      { name: 'Natural Cycle', day: 13, amount: 23.31 },
+      { name: 'Phone', day: 16, amount: 34.69, next: { amount: 42, from: '2026-10' } },
+      { name: 'Hulu', day: 16, amount: 14.06 },
+      { name: 'WiFi', day: 17, amount: 65.25, next: { amount: 55, from: '2026-10' } },
+      { name: 'Claude', day: 18, amount: 20.00 },
+      { name: 'Apple TV', day: 21, amount: 14.99 },
+      { name: 'Electric', day: 22, amount: 185.00 },
+      { name: 'Car Insurance', day: 27, amount: 211.32 },
+      { name: 'Over Flo', day: 27, amount: 209.00 },
+      { name: 'Oura', day: 28, amount: 5.99 },
+      { name: 'Hatch (annual)', day: 26, amount: 49.99, annual: true },
+    ],
+    history: [],
+    undo: null, undoStack: [], recon: {},
+    postKind: '', postAmount: '',
+    logMerchant: '', logAmount: '', logEnvelope: 'groceries', logCard: '',
+    activeTab: 'pool', booksTab: 'ledger', calMonth: 0, calDay: null, logOpen: false, flash: '', ask: null, splash: 'script', rev: 0, dark: (() => { try { const v = localStorage.getItem('lv_theme'); if (v) return v === 'dark'; return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; } })(), hide: (() => { try { return localStorage.getItem('lv_hide') === '1'; } catch (e) { return false; } })(), flyX: 0, flyY: 0, flyS: 1, splashShort: (() => { try { return localStorage.getItem('lv_splash_day') === new Date().toDateString(); } catch (e) { return false; } })(), sync: 'connecting', needSignIn: false, authEmail: '', authPass: '', authError: '', signedIn: false, snapshots: {}, confirmKey: '', billFlags: {}, pulse: '', openSecs: {},
+    editBills: false,
+  };
+
+  static ENV_NAMES = { groceries: 'Groceries', gas: 'Gas', grooming: 'Grooming', lifeF: 'Life Fund', misc: 'Misc', homeDecor: 'Home/Decor' };
+  static CARD_NAMES = { discover: 'Discover', chase: 'Chase', citi: 'Citi' };
+  static PERSIST = ['checking', 'floatReserved', 'envelopeBalances', 'savings', 'cards', 'cardCharges', 'rentHolding', 'rentPaidMonth', 'carRepaymentLeft', 'efStage', 'pending', 'check', 'cfg', 'bills', 'billFlags'];
+
+  componentDidMount() {
+    this._hlOK = true; this.paintHide();
+    const T = (fn, ms) => { this._st = (this._st || []).concat(setTimeout(fn, ms)); };
+    try { localStorage.setItem('lv_splash_day', new Date().toDateString()); } catch (e) {}
+    const outAt = this.state.splashShort ? 1400 : 3400;
+    T(this.beginOut, outAt);
+    T(() => this.setState({ splash: 'done' }), outAt + 850);
+    const attach = () => {
+      if (!window.__hf || this._sub) return;
+      this._sub = window.__hf.onSnapshot(window.__hf.ref, (snap) => {
+        if (snap.exists()) {
+          const d = snap.data(), p = {};
+          this._rev = typeof d.rev === 'number' ? d.rev : 0;
+          ['checking', 'floatReserved', 'cardCharges', 'rentHolding', 'carRepaymentLeft'].forEach(k => { if (typeof d[k] === 'number') p[k] = d[k]; });
+          if (typeof d.rentPaidMonth === 'string') p.rentPaidMonth = d.rentPaidMonth;
+          if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
+          if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = d.envelopeBalances;
+          if (d.savings && typeof d.savings.ef === 'number') p.savings = { house: 0, wedding: 0, ...d.savings };
+          if (d.cards && typeof d.cards.discover === 'number') p.cards = { chase: 0, citi: 0, ...d.cards };
+          else if (d.savings && typeof d.savings.discover === 'number') p.cards = { discover: d.savings.discover, chase: 0, citi: 0 };
+          if (p.savings) delete p.savings.discover;
+          if (Array.isArray(d.pending)) p.pending = d.pending.filter(x => x && typeof x.amount === 'number' && typeof x.destType === 'string' && typeof x.destKey === 'string' && typeof x.lands === 'string');
+          if (Array.isArray(d.history)) p.history = d.history.filter(x => x && typeof x.id === 'string' && typeof x.t === 'string' && typeof x.label === 'string' && typeof x.amt === 'number');
+          if (Array.isArray(d.bills) && d.bills.length && d.bills.every(b => b && typeof b.name === 'string' && typeof b.day === 'number' && typeof b.amount === 'number')) {
+            const sched = { Phone: { amount: 42, from: '2026-10' }, WiFi: { amount: 55, from: '2026-10' } };
+            const ymNow = this.ymOf(new Date());
+            p.bills = d.bills.map(b => (sched[b.name] && !b.next && sched[b.name].from > ymNow && b.amount !== sched[b.name].amount) ? { ...b, next: sched[b.name] } : b);
+          }
+          if (d.billFlags && typeof d.billFlags === 'object') p.billFlags = d.billFlags;
+          if (d.cfg && typeof d.cfg.groceries === 'number') p.cfg = { ...this.state.cfg, ...d.cfg };
+          if ('check' in d) p.check = d.check && d.check.jobs ? d.check : null;
+          if (d.snapshots && typeof d.snapshots === 'object') p.snapshots = d.snapshots;
+          this.setState(p, () => { this._loaded = true; this.housekeeping(); });
+        } else { this._rev = 0; this._loaded = true; this.housekeeping(); }
+        this.setState({ sync: snap.metadata && snap.metadata.fromCache ? 'cached' : 'live', needSignIn: false });
+      }, (err) => { this._sub = null; if (err && err.code === 'permission-denied') this.setState({ needSignIn: true, sync: 'signin' }); else this.setState({ sync: 'offline' }); });
+    };
+    this._attach = attach;
+    const watchAuth = () => { if (this._authW || !window.__hf || !window.__hf.onAuth) return; this._authW = true; window.__hf.onAuth(u => { this.setState({ signedIn: !!u }); if (u && !this._sub) attach(); }); };
+    const boot = () => { attach(); watchAuth(); };
+    boot();
+    window.addEventListener('hf-ready', boot);
+    this._tick = setInterval(() => this.housekeeping(), 60000);
+  }
+  componentWillUnmount() { clearInterval(this._blurT); clearInterval(this._tick); clearInterval(this._cnt); (this._st || []).forEach(clearTimeout); if (this._sub) this._sub(); }
+
+  // ---------- helpers ----------
+  r2(n) { return +(+n).toFixed(2); }
+  fmt(n) {
+    if (typeof n !== 'number' || isNaN(n)) return '—';
+    if (this.state.hide && this._hlOK === false) return '$•••';
+    const s = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (n < 0 ? '-$' : '$') + s;
+  }
+  suffix(day) {
+    if (day >= 11 && day <= 13) return 'th';
+    const l = day % 10;
+    return l === 1 ? 'st' : l === 2 ? 'nd' : l === 3 ? 'rd' : 'th';
+  }
+  iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  nextBiz() {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return this.iso(d);
+  }
+  uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  weekdayAdjust(d) {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (x.getDay() === 6) x.setDate(x.getDate() - 1);
+    if (x.getDay() === 0) x.setDate(x.getDate() - 2);
+    return x;
+  }
+  dateLabel(d) { return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  shortDate(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  litchChecks() {
+    const anchor = new Date(2026, 8, 25), out = [];
+    for (let k = -4; k < 40; k++) { const d = new Date(anchor); d.setDate(anchor.getDate() + 14 * k); out.push(d); }
+    return out;
+  }
+  litchCheckNum(d) {
+    const same = this.litchChecks().filter(x => x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth());
+    return same.findIndex(x => x.getTime() === d.getTime()) + 1;
+  }
+  paychecksFrom(today, months) {
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()), pcs = [];
+    for (let m = 0; m < months; m++) {
+      const y = today.getFullYear(), mo = today.getMonth() + m;
+      const a = this.weekdayAdjust(new Date(y, mo, 15)), b = this.weekdayAdjust(new Date(y, mo + 1, 0));
+      if (a >= start) pcs.push({ date: a, kind: 'liv15' });
+      if (b >= start) pcs.push({ date: b, kind: 'livEnd' });
+    }
+    this.litchChecks().forEach(x => { if (x >= start) pcs.push({ date: x, kind: 'litch' + Math.min(3, this.litchCheckNum(x)) }); });
+    return pcs.sort((a, b) => a.date - b.date);
+  }
+  nextKind(today) { return this.paychecksFrom(today, 2)[0].kind; }
+  decorActive() { return new Date() < new Date(2026, 11, 1); }
+
+  // targets derived from the bill list
+  monthlyBills(includeRent) { return this.state.bills.reduce((a, b) => a + (b.name === 'Rent' && !includeRent ? 0 : b.annual ? b.amount / 12 : b.amount), 0); }
+  floatT() { return this.r2(this.state.bills.filter(b => !b.annual).reduce((a, b) => a + this.num(b.amount), 0)); }
+  ef1T() { return this.r2(this.floatT() * 3); }
+  ef2T() { return this.r2(this.floatT() * 6); }
+  num(n) { return typeof n === 'number' && !isNaN(n) ? n : 0; }
+  caps() { const c = this.state.cfg; return { groceries: c.groceries, gas: c.gas, grooming: c.grooming, lifeF: c.lifeF }; }
+
+  core() {
+    const s = this.state, o = {};
+    Component.PERSIST.forEach(k => { o[k] = s[k]; });
+    return o;
+  }
+  copyCore(c) { return { ...c, envelopeBalances: { ...c.envelopeBalances }, savings: { ...c.savings }, cards: { ...c.cards }, pending: [...c.pending] }; }
+  persist(patch) {
+    const hf = window.__hf; if (!hf) return;
+    this._wq = (this._wq || Promise.resolve()).then(async () => {
+      const setSync = v => { if (this.state.sync !== v) this.setState({ sync: v }); };
+      try {
+        if (!navigator.onLine || !hf.runTransaction || this._rev === undefined) throw { code: 'offline' };
+        let nextRev = 0;
+        await hf.runTransaction(async tx => {
+          const snap = await tx.get(hf.ref), remote = snap.exists() ? (snap.data().rev || 0) : 0;
+          if (remote !== this._rev) throw { code: 'conflict' };
+          nextRev = remote + 1;
+          tx.set(hf.ref, { ...patch, rev: nextRev }, { merge: true });
+        });
+        this._rev = nextRev; setSync('live');
+      } catch (e) {
+        if (e && e.code === 'conflict') {
+          if (this._sub) { this._sub(); this._sub = null; }
+          if (this._attach) this._attach();
+          this.setState({ flash: 'Someone else just changed the numbers. Your last entry was not saved, so please enter it again.' });
+          clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 6000);
+          return;
+        }
+        const nr = (this._rev || 0) + 1;
+        try {
+          const p = hf.setDoc(hf.ref, { ...patch, rev: nr }, { merge: true });
+          this._rev = nr;
+          if (!navigator.onLine) { setSync('offline'); p.catch(() => {}); return; }
+          await p; setSync('live');
+        } catch (e2) { console.error('Firebase error:', e2); const denied = e2 && e2.code === 'permission-denied'; this.setState({ sync: denied ? 'signin' : 'offline', needSignIn: denied || this.state.needSignIn }); }
+      }
+    });
+  }
+  commit(next, label, amt, meta) {
+    const entry = { id: this.uid(), t: new Date().toISOString(), label, amt: this.r2(amt || 0), meta: meta || null };
+    const history = [entry, ...this.state.history].slice(0, 150);
+    this.setState({ ...next, history, undoStack: [{ core: this.core(), history: this.state.history }, ...this.state.undoStack].slice(0, 12) });
+    this.persist({ ...next, history });
+  }
+  save(patch) { this.setState(patch); this.persist(patch); }
+
+  pendTo(c, type, key) { return c.pending.filter(p => p.destType === type && p.destKey === key).reduce((a, p) => a + p.amount, 0); }
+  effCard(c, k) { return Math.max(0, this.r2(c.cards[k] - this.pendTo(c, 'card', k))); }
+  effSav(c, k) { return this.r2(c.savings[k] + this.pendTo(c, 'saving', k)); }
+  cardsOwed(c) { return ['discover', 'chase', 'citi'].reduce((a, k) => a + this.effCard(c, k), 0); }
+  activeTier(c) {
+    const g = c.cfg;
+    if (this.cardsOwed(c) > 0.004) return 'cards';
+    if (c.floatReserved < this.floatT() - 0.005) return 'float';
+    if (c.efStage === 1 && this.effSav(c, 'ef') < this.ef1T() - 0.005) return 'ef';
+    if (this.effSav(c, 'car') < g.carTarget - 0.005) return 'car';
+    if (this.effSav(c, 'house') < g.houseTarget - 0.005) return 'house';
+    if (this.effSav(c, 'wedding') < g.weddingTarget - 0.005) return 'wedding';
+    return 'done';
+  }
+  send(c, label, amt, destType, destKey) {
+    c.checking = this.r2(c.checking - amt);
+    c.pending.push({ id: this.uid(), label, amount: this.r2(amt), destType, destKey, lands: this.nextBiz() });
+  }
+  land(c, p) {
+    if (p.destType === 'rent') c.rentHolding = this.r2(c.rentHolding + p.amount);
+    else if (p.destType === 'saving') c.savings[p.destKey] = this.r2(c.savings[p.destKey] + p.amount);
+    else c.cards[p.destKey] = Math.max(0, this.r2(c.cards[p.destKey] - p.amount));
+    c.pending = c.pending.filter(x => x.id !== p.id);
+  }
+
+  ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  billPaid(b, today) {
+    const flag = ((this.state.billFlags || {})[this.ymOf(today)] || {})[b.name];
+    return flag === 'paid' || (flag !== 'unpaid' && b.day < today.getDate());
+  }
+  billsBeforeNextCheck(today) {
+    const d = today.getDate(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const end = d <= 15 ? 15 : dim;
+    return this.state.bills.filter(b => b.name !== 'Rent' && !this.billPaid(b, today) && b.day <= end);
+  }
+  toggleBill(name) {
+    const today = new Date(), ym = this.ymOf(today), b = this.state.bills.find(x => x.name === name);
+    if (!b) return;
+    const paidNow = this.billPaid(b, today), flags = { ...(this.state.billFlags || {}) };
+    flags[ym] = { ...(flags[ym] || {}), [name]: paidNow ? 'unpaid' : 'paid' };
+    this.save({ billFlags: flags });
+  }
+  reserveWindow(kind) {
+    let sum = 0;
+    this.state.bills.forEach(b => {
+      if (b.name === 'Rent') return;
+      const inW = kind === 'liv15' ? b.day >= 16 : b.day <= 15;
+      if (inW) sum += b.annual ? b.amount / 12 : b.amount;
+    });
+    return this.r2(sum);
+  }
+  computeSafe(s, today) {
+    const billsDue = this.billsBeforeNextCheck(today).reduce((a, b) => a + b.amount, 0);
+    const held = Object.keys(s.envelopeBalances).reduce((a, k) => a + Math.max(s.envelopeBalances[k], 0), 0);
+    return { safe: s.checking - s.floatReserved - billsDue - held, billsDue, held };
+  }
+
+  // ---------- engine ----------
+  jobsFor(kind, amount) {
+    const s = this.state, g = s.cfg, jobs = []; let rem = amount;
+    const add = (o) => {
+      let a = this.r2(Math.min(rem, o.want));
+      if (o.allOrNothing && a < o.want) a = 0;
+      if (a < 0) a = 0;
+      rem = this.r2(rem - a);
+      jobs.push({ key: o.key, label: o.label, type: o.type, amount: a, want: this.r2(o.want), short: a < o.want - 0.005, status: a <= 0 && o.want > 0 ? 'skipped' : 'todo', skippable: !!o.skippable, dest: o.dest || null, envKey: o.envKey || null, note: o.note || '' });
+    };
+    const caps = this.caps();
+    const refill = (key, label) => {
+      const bal = s.envelopeBalances[key];
+      add({ key: 'refill-' + key, label, type: 'refill', want: Math.max(0, this.r2(bal < 0 ? caps[key] + bal : caps[key] - bal)), envKey: key, note: bal < 0 ? `Overspent by ${this.fmt(-bal)}, funded at cap minus overage` : '' });
+    };
+    if (kind === 'litch1' || kind === 'litch2') {
+      add({ key: 'rent', label: 'Rent-holding', type: 'rent', want: g.rent, note: 'Moves to savings, pays rent on the 1st' });
+      add({ key: 'family', label: 'Family Support', type: 'transfer', want: g.family, dest: 'family', skippable: true });
+      if (kind === 'litch1') add({ key: 'pet', label: 'Pet Fund', type: 'transfer', want: g.pet, dest: 'pet', skippable: true, allOrNothing: true });
+    }
+    if (kind === 'liv15' || kind === 'livEnd') {
+      add({ key: 'fun', label: 'Fun money, both people', type: 'fun', want: g.fun, note: 'To individual accounts, untracked after' });
+      add({ key: 'reserve', label: kind === 'liv15' ? 'Reserve bills, 16th to month end' : 'Reserve bills, 1st to 15th', type: 'info', want: this.reserveWindow(kind), note: 'Stays in checking, held for bills' });
+      if (kind === 'liv15') { refill('groceries', 'Groceries to cap'); refill('gas', 'Gas to cap'); refill('grooming', 'Grooming to cap'); }
+      else {
+        refill('lifeF', 'Life Fund to cap');
+        add({ key: 'misc', label: 'Misc', type: 'add', want: g.misc, envKey: 'misc' });
+        if (this.decorActive()) add({ key: 'decor', label: 'Home/Decor', type: 'add', want: g.decor, envKey: 'homeDecor', note: 'Ends after Nov 2026' });
+        add({ key: 'vacation', label: 'Vacation', type: 'transfer', want: g.vacation, dest: 'vacation', skippable: true });
+        if (s.carRepaymentLeft > 0) add({ key: 'carRepay', label: 'Car Fund repayment', type: 'carRepay', want: Math.min(g.carRepay, s.carRepaymentLeft), skippable: true, note: `${this.fmt(s.carRepaymentLeft)} left to repay` });
+        if (s.efStage === 2) add({ key: 'ef2', label: 'Emergency Fund stage 2', type: 'transfer', want: g.ef2, dest: 'ef' });
+      }
+    }
+    const gap = Math.max(0, -this.computeSafe(s, new Date()).safe);
+    if (gap > 0.004) add({ key: 'gap', label: 'Hold to close Safe-to-Move gap', type: 'info', want: gap, note: 'Stays in checking before anything reaches the cascade' });
+    jobs.push({ key: 'sweep', label: '', type: 'sweep', amount: 0, want: 0, short: false, status: 'todo', skippable: false, dest: null, envKey: null, note: '' });
+    return jobs;
+  }
+  sweepAmount(amount, jobs) {
+    return Math.max(0, this.r2(amount - jobs.filter(j => j.key !== 'sweep' && j.status !== 'skipped').reduce((a, j) => a + j.amount, 0)));
+  }
+  applyJob(core, j) {
+    const c = this.copyCore(core), a = j.amount;
+    if (j.type === 'rent') this.send(c, j.label, a, 'rent', 'rent');
+    else if (j.type === 'transfer') this.send(c, j.label, a, 'saving', j.dest);
+    else if (j.type === 'carRepay') { this.send(c, j.label, a, 'saving', 'car'); c.carRepaymentLeft = this.r2(c.carRepaymentLeft - a); }
+    else if (j.type === 'fun') c.checking = this.r2(c.checking - a);
+    else if (j.type === 'refill') { const b0 = c.envelopeBalances[j.envKey]; c.envelopeBalances[j.envKey] = this.r2(b0 < 0 ? a : b0 + a); }
+    else if (j.type === 'add') c.envelopeBalances[j.envKey] = this.r2(c.envelopeBalances[j.envKey] + a);
+    else if (j.type === 'sweep') this.distribute(c, a);
+    return c;
+  }
+  distribute(c, rem) {
+    const g = c.cfg;
+    let r = rem, budget = r + c.cardCharges, paid = 0;
+    ['discover', 'chase', 'citi'].forEach(k => {
+      const a = this.r2(Math.min(this.effCard(c, k), budget));
+      if (a > 0.004) { this.send(c, 'Payment to ' + Component.CARD_NAMES[k], a, 'card', k); budget = this.r2(budget - a); paid += a; }
+    });
+    const fromAddOn = Math.min(c.cardCharges, paid);
+    r = this.r2(r - Math.max(0, paid - fromAddOn));
+    c.cardCharges = this.r2(c.cardCharges - fromAddOn);
+    if (this.cardsOwed(c) > 0.004 || r <= 0.004) return;
+    const putLabel = (gap, fn) => { const a = this.r2(Math.min(gap, r)); if (a > 0.004) { fn(a); r = this.r2(r - a); } };
+    putLabel(this.floatT() - c.floatReserved, a => { c.floatReserved = this.r2(c.floatReserved + a); });
+    if (c.floatReserved < this.floatT() - 0.005) return;
+    const putSave = (label, key, target) => putLabel(target - this.effSav(c, key), a => this.send(c, label, a, 'saving', key));
+    if (c.efStage === 1) { putSave('Emergency Fund', 'ef', this.ef1T()); if (this.effSav(c, 'ef') >= this.ef1T() - 0.005) c.efStage = 2; else return; }
+    putSave('Car Fund', 'car', g.carTarget);
+    if (this.effSav(c, 'car') < g.carTarget - 0.005) return;
+    putSave('House', 'house', g.houseTarget);
+    if (this.effSav(c, 'house') < g.houseTarget - 0.005) return;
+    putSave('Wedding', 'wedding', g.weddingTarget);
+  }
+
+  // ---------- actions ----------
+  startCheck = () => {
+    if (this.state.check) return;
+    const kind = this.state.postKind || this.nextKind(new Date());
+    const amount = parseFloat(this.state.postAmount) || (kind.indexOf('litch') === 0 ? 2100 : 2720.17);
+    const names = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv, 15th', livEnd: 'Liv, month end' };
+    this.commit({ checking: this.r2(this.state.checking + amount), check: { kind, amount, name: names[kind], jobs: this.jobsFor(kind, amount) } }, names[kind] + ' arrived', amount);
+    this.setState({ postAmount: '' });
+  };
+  setJobStatus(key, status, applied) {
+    const c = this.state.check;
+    return { ...c, jobs: c.jobs.map(x => x.key === key ? { ...x, status, amount: applied != null ? applied : x.amount } : x) };
+  }
+  confirmJob(key) {
+    const c = this.state.check; if (!c) return;
+    const j = c.jobs.find(x => x.key === key); if (!j || j.status !== 'todo') return;
+    const amt = j.key === 'sweep' ? this.sweepAmount(c.amount, c.jobs) : j.amount;
+    const core = this.applyJob(this.core(), { ...j, amount: amt });
+    this.commit({ ...core, check: this.setJobStatus(key, 'done', amt) }, j.key === 'sweep' ? 'Cascade sweep' : j.label, -amt);
+  }
+  skipJob(key) {
+    const c = this.state.check; if (!c) return;
+    const j = c.jobs.find(x => x.key === key); if (!j || j.status !== 'todo' || !j.skippable) return;
+    this.commit({ check: this.setJobStatus(key, 'skipped') }, 'Skipped ' + j.label, 0);
+  }
+  confirmAll = () => {
+    const c = this.state.check; if (!c) return;
+    let core = this.core(); const jobs = c.jobs.map(x => ({ ...x }));
+    jobs.filter(j => j.key !== 'sweep' && j.status === 'todo').forEach(j => { core = this.applyJob(core, j); j.status = 'done'; });
+    const sw = jobs.find(j => j.key === 'sweep');
+    if (sw && sw.status === 'todo') { const amt = this.sweepAmount(c.amount, jobs); core = this.applyJob(core, { ...sw, amount: amt }); sw.status = 'done'; sw.amount = amt; }
+    this.commit({ ...core, check: { ...c, jobs } }, 'Confirmed all steps, ' + c.name, 0);
+  };
+  finishCheck = () => {
+    const c = this.state.check; if (!c || c.jobs.some(j => j.status === 'todo')) return;
+    this.commit({ check: null }, 'Finished ' + c.name, 0);
+  };
+  logTransaction = () => {
+    const s = this.state, amount = parseFloat(s.logAmount);
+    if (!amount || amount <= 0) return;
+    const key = s.logEnvelope || 'misc', card = s.logCard;
+    const next = { envelopeBalances: { ...s.envelopeBalances, [key]: this.r2(s.envelopeBalances[key] - amount) } };
+    if (card) { next.cards = { ...s.cards, [card]: this.r2(s.cards[card] + amount) }; next.cardCharges = this.r2(s.cardCharges + amount); }
+    else next.checking = this.r2(s.checking - amount);
+    this.commit(next, `${s.logMerchant || 'Spend'} · ${Component.ENV_NAMES[key]}${card ? ' · ' + Component.CARD_NAMES[card] : ''}`, -amount, { type: 'spend', env: key, card: card || null });
+    this.setState({ logMerchant: '', logAmount: '', logCard: '', logOpen: false, pulse: key, flash: `Logged ${this.fmt(amount)} to ${Component.ENV_NAMES[key]}` });
+    clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 3200);
+    clearTimeout(this._pulseT); this._pulseT = setTimeout(() => this.setState({ pulse: '' }), 900);
+  };
+  deleteEntry(h) {
+    const s = this.state, m = h.meta, amount = -h.amt;
+    if (!m || m.type !== 'spend') return;
+    const next = { envelopeBalances: { ...s.envelopeBalances, [m.env]: this.r2(s.envelopeBalances[m.env] + amount) } };
+    if (m.card) { next.cards = { ...s.cards, [m.card]: Math.max(0, this.r2(s.cards[m.card] - amount)) }; next.cardCharges = Math.max(0, this.r2(s.cardCharges - amount)); }
+    else next.checking = this.r2(s.checking + amount);
+    const history = s.history.filter(x => x.id !== h.id);
+    this.setState({ ...next, history, undoStack: [] });
+    this.persist({ ...next, history });
+  }
+  landOne(id) {
+    const p = this.state.pending.find(x => x.id === id); if (!p) return;
+    const c = this.copyCore(this.core()); this.land(c, p);
+    this.commit({ savings: c.savings, cards: c.cards, pending: c.pending }, 'Landed: ' + p.label, p.amount);
+  }
+  housekeeping() {
+    if (!this._loaded) return;
+    const s = this.state, today = new Date(), t = this.iso(today);
+    const c = this.copyCore(this.core()); let changed = false; const notes = [];
+    s.pending.filter(p => p.lands <= t).forEach(p => { this.land(c, p); changed = true; notes.push('Landed: ' + p.label); });
+    const ym = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    const rentBill = (s.bills.find(b => b.name === 'Rent') || { amount: 2950 }).amount;
+    if (s.rentPaidMonth !== ym && c.rentHolding >= rentBill - 0.005) {
+      c.rentHolding = this.r2(c.rentHolding - rentBill); c.rentPaidMonth = ym; changed = true; notes.push('Rent paid from Rent-holding');
+    }
+    const snaps = { ...(s.snapshots || {}) };
+    if (!snaps[t]) {
+      snaps[t] = { t: new Date().toISOString(), core: JSON.parse(JSON.stringify(this.core())) };
+      Object.keys(snaps).sort().slice(0, -7).forEach(k => delete snaps[k]);
+      this.setState({ snapshots: snaps }); this.persist({ snapshots: snaps });
+    }
+    const ymNow = this.ymOf(today);
+    if (s.bills.some(b => b.next && b.next.from <= ymNow)) {
+      const bills = s.bills.map(b => (b.next && b.next.from <= ymNow) ? (() => { const nb = { ...b, amount: b.next.amount }; delete nb.next; return nb; })() : b);
+      this.setState({ bills }); this.persist({ bills });
+    }
+    if (!changed) return;
+    const next = { savings: c.savings, cards: c.cards, pending: c.pending, rentHolding: c.rentHolding, checking: c.checking, rentPaidMonth: c.rentPaidMonth };
+    const entries = notes.map(n => ({ id: this.uid(), t: new Date().toISOString(), label: n, amt: 0, meta: null }));
+    const history = [...entries, ...s.history].slice(0, 150);
+    this.setState({ ...next, history });
+    this.persist({ ...next, history });
+  }
+  undoLast = () => {
+    const st = this.state.undoStack; if (!st.length) return;
+    const u = st[0];
+    this.setState({ ...u.core, history: u.history, undoStack: st.slice(1) });
+    this.persist({ ...u.core, history: u.history });
+  };
+  ask(title, value, cb) { this._askCb = cb; this.setState({ ask: { title, value: String(value) } }); }
+  saveAsk = () => { const a = this.state.ask, n = parseFloat(a && a.value), cb = this._askCb; this.setState({ ask: null }); if (cb && !isNaN(n)) cb(n); };
+  undoFlash = () => { this.undoLast(); clearTimeout(this._flashT); this.setState({ flash: '' }); };
+  setBalance(kind, key, label, current) { this.ask('Set ' + label, current, n => this.applyBalance(kind, key, label, current, n)); }
+  applyBalance(kind, key, label, current, n) {
+    const s = this.state, val = this.r2(n);
+    let next;
+    if (kind === 'checking') next = { checking: val };
+    else if (kind === 'float') next = { floatReserved: val };
+    else if (kind === 'rent') next = { rentHolding: val };
+    else if (kind === 'saving') next = { savings: { ...s.savings, [key]: val } };
+    else if (kind === 'card') next = { cards: { ...s.cards, [key]: Math.max(0, val) } };
+    else if (kind === 'env') next = { envelopeBalances: { ...s.envelopeBalances, [key]: val } };
+    else if (kind === 'carLeft') next = { carRepaymentLeft: Math.max(0, val) };
+    this.commit(next, `Set ${label} to ${this.fmt(val)}`, val - current);
+  }
+  payCard(k) {
+    const owed = this.effCard(this.copyCore(this.core()), k);
+    this.ask('Pay ' + Component.CARD_NAMES[k] + ' from checking', owed, n => {
+      if (n <= 0) return;
+      const c = this.copyCore(this.core());
+      this.send(c, 'Payment to ' + Component.CARD_NAMES[k], this.r2(n), 'card', k);
+      this.commit({ checking: c.checking, pending: c.pending }, 'Paid ' + Component.CARD_NAMES[k], -n);
+    });
+  }
+  setBill(i, field, value) {
+    const bills = this.state.bills.map((b, j) => j === i ? { ...b, [field]: field === 'name' ? value : (parseFloat(value) || 0) } : b);
+    this.save({ bills });
+  }
+  addBill = () => this.save({ bills: [...this.state.bills, { name: 'New bill', day: 1, amount: 0 }] });
+  delBill(i) { this.save({ bills: this.state.bills.filter((b, j) => j !== i) }); }
+  setCfg(key, value) { this.save({ cfg: { ...this.state.cfg, [key]: parseFloat(value) || 0 } }); }
+
+  doSignIn = () => {
+    const s = this.state;
+    if (!window.__hf || !s.authEmail || !s.authPass) return;
+    window.__hf.signIn(s.authEmail.trim(), s.authPass).then(() => { this.setState({ needSignIn: false, authError: '', authPass: '', sync: 'connecting' }); if (!this._sub && this._attach) this._attach(); }).catch(() => this.setState({ authError: 'That email and password did not work.' }));
+  };
+  doSignOut = () => { if (window.__hf) window.__hf.signOut().then(() => this.setState({ signedIn: false })); };
+  exportBackup = () => {
+    const s = this.state, data = { exported: new Date().toISOString(), core: this.core(), history: s.history, snapshots: s.snapshots };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = 'livlit-backup-' + this.iso(new Date()) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  restoreSnap(key) {
+    const snap = (this.state.snapshots || {})[key]; if (!snap) return;
+    if (this.state.confirmKey !== key) { this.setState({ confirmKey: key }); clearTimeout(this._confT); this._confT = setTimeout(() => this.setState({ confirmKey: '' }), 4000); return; }
+    this.setState({ confirmKey: '' });
+    this.commit({ ...snap.core }, 'Restored snapshot from ' + key, 0);
+  }
+  startRev = () => { clearInterval(this._cnt); const t0 = Date.now(); this._cnt = setInterval(() => { const p = Math.min(1, (Date.now() - t0) / 1900); this.setState({ rev: p }); if (p >= 1) clearInterval(this._cnt); }, 33); };
+  beginOut = () => {
+    const vw = window.innerWidth, vh = window.innerHeight, colW = Math.min(vw, 430);
+    let safe = 0;
+    try { const p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);visibility:hidden'; document.body.appendChild(p); safe = p.offsetHeight; p.remove(); } catch (e) {}
+    this.setState({ splash: 'out', flyX: (vw - colW) / 2 + 22 + 13 - vw / 2, flyY: safe + 14 + 13 - (vh / 2 - 50), flyS: 26 / 120 });
+    this.startRev();
+    try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+  };
+  skipSplash = () => { if (this.state.splash === 'done' || this.state.splash === 'out') return; (this._st || []).forEach(clearTimeout); this.beginOut(); this._st = [setTimeout(() => this.setState({ splash: 'done' }), 850)]; };
+  applyRecon = () => {
+    const s = this.state, rc = s.recon || {};
+    const next = { savings: { ...s.savings }, cards: { ...s.cards } };
+    let n = 0, delta = 0;
+    const num = k => { const v = parseFloat(rc[k]); return (rc[k] === undefined || rc[k] === '' || isNaN(v)) ? null : this.r2(v); };
+    const c = num('checking'); if (c !== null) { delta += c - s.checking; next.checking = c; n++; }
+    const r = num('rent'); if (r !== null) { delta += r - s.rentHolding; next.rentHolding = r; n++; }
+    ['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].forEach(k => { const v = num('sav:' + k); if (v !== null) { delta += v - s.savings[k]; next.savings[k] = v; n++; } });
+    ['discover', 'chase', 'citi'].forEach(k => { const v = num('card:' + k); if (v !== null) { delta -= v - s.cards[k]; next.cards[k] = Math.max(0, v); n++; } });
+    if (!n) return;
+    this.commit(next, 'Matched ' + n + ' account' + (n === 1 ? '' : 's') + ' to bank', this.r2(delta));
+    this.setState({ recon: {}, flash: 'Matched ' + n + ' account' + (n === 1 ? '' : 's') + ' to your bank' });
+    clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 3200);
+  };
+  exportCalendar = () => {
+    const today = new Date(), day = d => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    const nm = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv payday', livEnd: 'Liv payday' };
+    const ev = []; const add = (d, title, desc, trig) => ev.push(['BEGIN:VEVENT', 'UID:' + this.uid() + '@livlit', 'DTSTAMP:' + day(today) + 'T090000Z', 'DTSTART;VALUE=DATE:' + day(d), 'SUMMARY:' + title, 'DESCRIPTION:' + desc, 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + title, 'TRIGGER:' + trig, 'END:VALARM', 'END:VEVENT'].join('\r\n'));
+    this.paychecksFrom(today, 3).forEach(p => add(p.date, nm[p.kind] + ' lands today', 'Open LivLit and start the check.', 'PT9H'));
+    for (let m = 0; m < 3; m++) this.state.bills.forEach(b => { const d = new Date(today.getFullYear(), today.getMonth() + m, b.day); if (d >= new Date(today.getFullYear(), today.getMonth(), today.getDate())) add(d, b.name + ' due ' + this.fmt(b.amount), 'Bill reminder from LivLit', '-PT15H'); });
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//LivLit//EN', 'CALSCALE:GREGORIAN', ...ev, 'END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    a.download = 'livlit-reminders.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  pal(dark) {
+    return dark
+      ? { bg: '#131715', card: '#1C2220', ink: '#ECE9E1', muted: '#9FA59D', faint: '#838A83', line: '#2A322E', line2: '#38423D', key: '#252C29', key2: '#2F3733', sage: '#79B08C', clay: '#E2966F', mint: '#1E2C24', mintFg: '#A6D2B5', clayBg: '#33241E', clayFg: '#F0B79A', paper: '#232A26', onSage: '#0E1A13', gray: '#4C564F' }
+      : { bg: '#FAF8F4', card: '#FFFFFF', ink: '#2B2A28', muted: '#6B675F', faint: '#77736A', line: '#ECE8E0', line2: '#DDD6C8', key: '#F1EDE4', key2: '#E4DED0', sage: '#4F7D61', clay: '#B4532F', mint: '#E4EEE7', mintFg: '#2F5A40', clayBg: '#F8E9E2', clayFg: '#7A3A22', paper: '#F3F0E8', onSage: '#FFFFFF', gray: '#B9B3A6' };
+  }
+  toggleDark = () => { const d = !this.state.dark; try { localStorage.setItem('lv_theme', d ? 'dark' : 'light'); } catch (e) {} this.setState({ dark: d }); };
+  toggleHide = () => { const h = !this.state.hide; try { localStorage.setItem('lv_hide', h ? '1' : '0'); } catch (e) {} this.setState({ hide: h }); };
+  componentDidUpdate() { this.paintHide(); if (this.state.hide) this.collectBlur(); }
+  paintHide() {
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => {
+      this._raf = 0;
+      const s = this.state;
+      document.body.classList.toggle('lv-dark', !!s.dark);
+      document.body.classList.toggle('lv-hide', !!s.hide);
+      try { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', this.pal(s.dark).bg); } catch (e) {}
+      if (!this._blurT) this._blurT = setInterval(() => { if (this.state.hide) this.collectBlur(); }, 500);
+      this.collectBlur();
+    });
+  }
+  collectBlur() {
+    const root = document.getElementById('lv-root'); if (!root) return;
+    const want = new Set();
+    if (this.state.hide) {
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+      while ((n = w.nextNode())) {
+        if (n.nodeValue.indexOf('$') < 0 || !/\$\s?[\d,]/.test(n.nodeValue)) continue;
+        const p = n.parentElement; if (!p || p.closest('[data-nohide]')) continue;
+        want.add(p);
+      }
+    }
+    root.querySelectorAll('.lv-b').forEach(e => { if (!want.has(e)) e.classList.remove('lv-b'); });
+    want.forEach(e => { if (!e.classList.contains('lv-b')) e.classList.add('lv-b'); });
+  }
+  calShift(dir) { const m = Math.max(-2, Math.min(11, this.state.calMonth + dir)); this.setState({ calMonth: m, calDay: null }); }
+  pressKey(k) {
+    let a = this.state.logAmount || '';
+    if (k === '⌫') a = a.slice(0, -1);
+    else if (k === '.') { if (a.indexOf('.') < 0) a = (a || '0') + '.'; }
+    else { if (a.indexOf('.') >= 0 && a.split('.')[1].length >= 2) return; if (a.length >= 8) return; a = (a === '0' ? '' : a) + k; }
+    this.setState({ logAmount: a });
+  }
+
+  // ---------- render ----------
+  renderVals() {
+    const P = this.pal(this.state.dark);
+    const s = this.state, today = new Date(), d = today.getDate(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const { checking, floatReserved, envelopeBalances: eb, savings, cards, carRepaymentLeft, bills, activeTab, check, cfg } = s;
+    const core = this.core(), caps = this.caps();
+    const effSavTotal = ['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].reduce((a, k) => a + this.effSav(core, k), 0);
+    const owed = this.cardsOwed(core);
+    const totalBalance = checking + effSavTotal + s.rentHolding + this.pendTo(core, 'rent', 'rent') - owed;
+    const { safe: safeToMove, billsDue, held } = this.computeSafe(s, today);
+    const nextEnd = d <= 15 ? 'the 15th' : 'month end';
+    const safeNote = `${this.fmt(checking)} checking − ${this.fmt(floatReserved)} float − ${this.fmt(billsDue)} bills by ${nextEnd} − ${this.fmt(held)} held in envelopes`;
+    const floatT = this.floatT(), ef1 = this.ef1T(), efT = s.efStage === 1 ? ef1 : this.ef2T();
+
+    const kindNow = s.postKind || this.nextKind(today);
+    const amtNow = parseFloat(s.postAmount) || (kindNow.indexOf('litch') === 0 ? 2100 : 2720.17);
+    const tierLabels = { cards: 'credit cards', float: 'Float', ef: 'Emergency Fund', car: 'Car Fund', house: 'House', wedding: 'Wedding', done: 'nothing, all funded' };
+    const activeKey = this.activeTier(core);
+    const rowFor = (j, amount, jobs) => {
+      if (j.key === 'sweep') {
+        const a = j.status === 'done' ? j.amount : this.sweepAmount(amount, jobs);
+        return { label: 'Cascade sweep → ' + tierLabels[activeKey], amount: this.fmt(a + (activeKey === 'cards' ? s.cardCharges : 0)), tone: P.ink, note: s.cardCharges > 0 && activeKey === 'cards' ? `Includes ${this.fmt(s.cardCharges)} of new card charges on top` : 'What is left after the steps above', opacity: j.status === 'done' ? 0.5 : 1 };
+      }
+      return { label: j.label + (j.status === 'skipped' ? ' (skipped)' : j.status === 'done' ? ' ✓' : ''), amount: this.fmt(j.amount), tone: j.short ? P.clay : P.ink, note: j.short ? `Short: wanted ${this.fmt(j.want)}` : j.note, opacity: j.status === 'todo' ? 1 : 0.5 };
+    };
+    const previewJobs = check ? [] : this.jobsFor(kindNow, amtNow);
+    const previewRows = previewJobs.map(j => rowFor(j, amtNow, previewJobs));
+    const checkRows = check ? check.jobs.map(j => ({ ...rowFor(j, check.amount, check.jobs), showActions: j.status === 'todo', showSkip: j.status === 'todo' && j.skippable, onConfirm: () => this.confirmJob(j.key), onSkip: () => this.skipJob(j.key) })) : [];
+    const openSteps = check ? check.jobs.filter(j => j.status === 'todo').length : 0;
+
+    const order = ['cards', 'float', 'ef', 'car', 'house', 'wedding'];
+    const cardList = ['discover', 'chase', 'citi'].filter(k => this.effCard(core, k) > 0.004).map(k => `${Component.CARD_NAMES[k]} ${this.fmt(this.effCard(core, k))}`).join(' · ');
+    const tiers = {
+      cards: { label: 'Credit card payoff', pct: owed > 0.004 ? 0 : 1, cur: owed > 0.004 ? this.fmt(owed) + ' owed' : 'Paid off', tgt: cardList || 'All cards at $0' },
+      float: { label: 'Float (1 month)', pct: floatReserved / floatT, cur: this.fmt(floatReserved), tgt: 'of ' + this.fmt(floatT) },
+      ef: { label: s.efStage === 1 ? 'Emergency Fund, 3 mo' : 'Emergency Fund, 6 mo', pct: savings.ef / efT, cur: this.fmt(this.effSav(core, 'ef')), tgt: 'of ' + this.fmt(efT) + (s.efStage === 2 ? ` · ${this.fmt(cfg.ef2)}/mo in parallel` : '') },
+      car: { label: 'Car Fund', pct: savings.car / cfg.carTarget, cur: this.fmt(this.effSav(core, 'car')), tgt: 'of ' + this.fmt(cfg.carTarget) + (carRepaymentLeft > 0 ? ` · ${this.fmt(carRepaymentLeft)} still owed back` : '') },
+      house: { label: 'House', pct: savings.house / cfg.houseTarget, cur: this.fmt(this.effSav(core, 'house')), tgt: 'of ' + this.fmt(cfg.houseTarget) },
+      wedding: { label: 'Wedding', pct: savings.wedding / cfg.weddingTarget, cur: this.fmt(this.effSav(core, 'wedding')), tgt: 'of ' + this.fmt(cfg.weddingTarget) },
+    };
+    const activeIdx = order.indexOf(activeKey);
+    const cascadeItems = order.map((k, i) => ({ label: tiers[k].label, current: tiers[k].cur, target: tiers[k].tgt, progressPct: Math.max(0, Math.min(100, tiers[k].pct * 100)), tag: i === activeIdx ? 'ACTIVE' : '', opacity: i === activeIdx ? 1 : i < activeIdx ? 0.55 : 0.6, barColor: i === activeIdx ? P.sage : P.gray }));
+
+    const mk = (name, key) => {
+      const bal = eb[key], cap = caps[key], neg = bal < 0;
+      const base = { name, balance: this.fmt(bal), balanceColor: neg ? P.clay : P.ink };
+      if (!cap) return { ...base, capPercent: 0, capColor: P.clay, barOpacity: 0, capDisplay: key === 'misc' ? `${this.fmt(cfg.misc)}/mo, no cap` : (this.decorActive() ? `${this.fmt(cfg.decor)}/mo, ends after Nov 2026` : 'Ended, that money now goes to the cascade') };
+      return { ...base, capPercent: Math.max(0, Math.min(100, bal / cap * 100)), capColor: neg ? P.clay : P.sage, barOpacity: 1, capDisplay: neg ? `${this.fmt(-bal)} over the ${this.fmt(cap)} cap` : `${this.fmt(bal)} left of ${this.fmt(cap)}` };
+    };
+    const envelopes = [mk('Groceries', 'groceries'), mk('Gas', 'gas'), mk('Grooming', 'grooming'), mk('Life Fund', 'lifeF'), mk('Misc', 'misc'), mk('Home/Decor', 'homeDecor')];
+
+    // quick log chips
+    const envChips = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ label: Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.clay : 'white', color: P.ink, onClick: () => this.setState({ logEnvelope: k }) }));
+    const cardChips = [['', 'Checking'], ['discover', 'Discover'], ['chase', 'Chase'], ['citi', 'Citi']].map(([k, l]) => ({ label: l, bg: s.logCard === k ? P.ink : 'transparent', color: s.logCard === k ? P.bg : P.ink, onClick: () => this.setState({ logCard: k }) }));
+
+    // coming up: next bills + next paycheck, by date
+    const startD = new Date(today.getFullYear(), today.getMonth(), d), ups = [];
+    bills.forEach(b => {
+      let dt = new Date(today.getFullYear(), today.getMonth(), Math.min(b.day, dim));
+      if (dt < startD) dt = new Date(today.getFullYear(), today.getMonth() + 1, Math.min(b.day, new Date(today.getFullYear(), today.getMonth() + 2, 0).getDate()));
+      ups.push({ date: dt, label: b.name, amount: this.fmt(-b.amount), tone: P.ink });
+    });
+    const npc = this.paychecksFrom(today, 2)[0];
+    const pcNames = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv, 15th', livEnd: 'Liv, month end' };
+    ups.push({ date: npc.date, label: pcNames[npc.kind], amount: '+' + this.fmt(npc.kind.indexOf('litch') === 0 ? 2100 : 2720.17).slice(0), tone: P.clay });
+    ups.sort((a, b) => a.date - b.date);
+    const comingUp = ups.slice(0, 5).map(u => ({ when: this.shortDate(u.date), label: u.label, amount: u.amount, tone: u.tone }));
+
+    const banners = [];
+    if (check) banners.push(`${check.name}: ${openSteps} step${openSteps === 1 ? '' : 's'} left`);
+    if (s.pending.length) banners.push(`${s.pending.length} transfer${s.pending.length === 1 ? '' : 's'} in transit`);
+    const pcNow = this.paychecksFrom(today, 1).filter(p => p.date.getTime() === startD.getTime());
+    if (!check && pcNow.length) banners.push(pcNames[pcNow[0].kind] + ' lands today, start the check');
+    const dueToday = bills.filter(b => b.day === d && b.name !== 'Rent' && !this.billPaid(b, today));
+    if (dueToday.length) banners.push(dueToday.length + ' bill' + (dueToday.length === 1 ? '' : 's') + ' due today');
+    const bannerText = banners.join(' · ');
+
+    const accountRows = [
+      { name: 'Checking', sub: 'Ally joint, real balance', balance: this.fmt(checking), color: P.ink, onSet: () => this.setBalance('checking', null, 'Checking', checking) },
+      { name: 'Float', sub: 'Label inside checking', balance: this.fmt(floatReserved), color: P.ink, onSet: () => this.setBalance('float', null, 'Float', floatReserved) },
+      { name: 'Rent-holding', sub: `Ally joint savings, earning interest, pays ${this.fmt((bills.find(b => b.name === 'Rent') || { amount: 2950 }).amount)} on the 1st`, balance: this.fmt(s.rentHolding), color: P.ink, onSet: () => this.setBalance('rent', null, 'Rent-holding', s.rentHolding) },
+      ...[['ef', 'Emergency Fund'], ['car', 'Car Fund'], ['family', 'Family (Ghana)'], ['vacation', 'Vacation'], ['pet', 'Pet Fund'], ['house', 'House'], ['wedding', 'Wedding']].map(([k, n]) => ({ name: n, sub: 'Ally joint savings' + (this.pendTo(core, 'saving', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'saving', k))} in transit` : ''), balance: this.fmt(savings[k]), color: P.ink, onSet: () => this.setBalance('saving', k, n, savings[k]) })),
+      ...['discover', 'chase', 'citi'].map(k => ({ name: Component.CARD_NAMES[k], sub: 'Credit card, balance owed' + (this.pendTo(core, 'card', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'card', k))} paying` : ''), balance: this.fmt(cards[k]), color: cards[k] > 0.004 ? P.clay : P.ink, showPay: cards[k] > 0.004, onPay: () => this.payCard(k), onSet: () => this.setBalance('card', k, Component.CARD_NAMES[k], cards[k]) })),
+      { name: 'Car repayment left', sub: 'Owed back to Car Fund', balance: this.fmt(carRepaymentLeft), color: P.ink, onSet: () => this.setBalance('carLeft', null, 'Car repayment left', carRepaymentLeft) },
+      ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ name: Component.ENV_NAMES[k] + ' envelope', sub: 'Label inside checking', balance: this.fmt(eb[k]), color: eb[k] < 0 ? P.clay : P.ink, onSet: () => this.setBalance('env', k, Component.ENV_NAMES[k], eb[k]) })),
+    ];
+    const billsThisMonth = [...bills].map(b => { const paid = this.billPaid(b, today); return { name: b.name, day: b.day, daySuffix: this.suffix(b.day), amount: this.fmt(b.amount), opacity: paid ? 0.5 : 1, status: paid ? 'Paid' : 'Due', note: b.next ? `${this.fmt(b.next.amount)} from ${new Date(b.next.from + '-01T12:00:00').toLocaleDateString('en-US', { month: 'short' })}` : '', pillBg: paid ? P.mint : P.clayBg, pillFg: paid ? P.mintFg : P.clayFg, onToggle: () => this.toggleBill(b.name) }; }).sort((a, b) => a.day - b.day);
+    const billEditRows = bills.map((b, i) => ({ name: b.name, day: b.day, amount: b.amount, onName: e => this.setBill(i, 'name', e.target.value), onDay: e => this.setBill(i, 'day', e.target.value), onAmount: e => this.setBill(i, 'amount', e.target.value), onDelete: () => this.delBill(i) }));
+    const cfgDefs = [['groceries', 'Groceries cap', 'Funded on the 15th'], ['gas', 'Gas cap', 'Funded on the 15th'], ['grooming', 'Grooming cap', 'Funded on the 15th'], ['lifeF', 'Life Fund cap', 'Funded at month end'], ['misc', 'Misc per month', 'Uncapped, month end'], ['decor', 'Home/Decor per month', 'Ends after Nov 2026'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family Support per check', 'Litch #1 and #2'], ['pet', 'Pet Fund', 'Litch #1 only'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
+    const cfgRows = cfgDefs.map(([k, l, sub]) => ({ label: l, sub, value: cfg[k], onInput: e => this.setCfg(k, e.target.value) }));
+
+    const pendingRows = s.pending.map(p => ({ label: p.label, amount: this.fmt(p.amount), sub: 'Lands ' + this.dateLabel(new Date(p.lands + 'T00:00:00')), onLand: () => this.landOne(p.id) }));
+    const historyItems = s.history.slice(0, 60).map(h => ({ label: h.label, amount: h.amt === 0 ? '' : this.fmt(h.amt), color: h.amt < 0 ? P.ink : P.clay, when: new Date(h.t).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), canDelete: !!(h.meta && h.meta.type === 'spend'), onDelete: () => this.deleteEntry(h) }));
+
+    // insights
+    const alerts = [];
+    const RED = { bg: P.clayBg, fg: P.clayFg }, PAPER = { bg: P.paper, fg: P.ink }, BLUE = { bg: P.mint, fg: P.mintFg };
+    [['Groceries', 'groceries'], ['Grooming', 'grooming']].forEach(([n, k]) => {
+      if (eb[k] < 0) alerts.push({ ...RED, title: `${n} is ${this.fmt(-eb[k])} overspent`, message: `This is your own envelope running below zero, not a bank fee. It is already spent, so it comes off the next refill instead of leaving checking again. Next refill is ${this.fmt(caps[k] + eb[k])} (cap minus overage).` });
+    });
+    if (safeToMove < 0) alerts.push({ ...RED, title: `Safe to Move is ${this.fmt(safeToMove)}`, message: 'Checking is short before the next check. The next check closes this gap before anything reaches the cascade.' });
+    const nextFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const daysToFirst = Math.round((nextFirst - startD) / 86400000);
+    const rentAmt = (bills.find(b => b.name === 'Rent') || { amount: 2950 }).amount;
+    const litchBefore = this.litchChecks().filter(x => x >= startD && x < nextFirst && this.litchCheckNum(x) <= 2);
+    const incoming = litchBefore.length * cfg.rent, rentNow = s.rentHolding + this.pendTo(core, 'rent', 'rent');
+    const ym = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    if (s.rentPaidMonth === ym && rentNow + incoming < rentAmt - 0.005 && daysToFirst <= 14) alerts.push({ ...RED, title: `Rent-holding has ${this.fmt(rentNow)} of ${this.fmt(rentAmt)} for the 1st`, message: `${litchBefore.length} Litch check${litchBefore.length === 1 ? '' : 's'} before then would add ${this.fmt(incoming)}. Short by ${this.fmt(rentAmt - rentNow - incoming)}. If the real balance is higher, set it under Accounts.` });
+    if (owed > 0.004 && s.cardCharges > 0.004) alerts.push({ ...PAPER, title: `${this.fmt(s.cardCharges)} of new card charges`, message: 'Envelopes already dropped for these. The cash is still in checking, and the next sweep pays it on top of the planned card payment.' });
+    const envTotal = Object.keys(eb).reduce((a, k) => a + Math.max(eb[k], 0), 0), afterFloat = checking - floatReserved, litchLeft = afterFloat - envTotal;
+    if (litchLeft > 0.005) alerts.push({ ...PAPER, title: `${this.fmt(litchLeft)} left from Litch's paycheck`, message: `Checking minus Float is ${this.fmt(afterFloat)}. Envelopes hold ${this.fmt(envTotal)} of that, and the rest is what remains of Litch's paycheck.` });
+    if (s.pending.length) alerts.push({ ...PAPER, title: `${s.pending.length} transfer${s.pending.length === 1 ? '' : 's'} in transit`, message: `${this.fmt(s.pending.reduce((a, p) => a + p.amount, 0))} has left checking and is not yet credited at the destination.` });
+    if (alerts.length === 0) alerts.push({ ...BLUE, title: 'On track', message: 'No overspent envelopes and Safe to Move is positive.' });
+
+    const upcomingPaychecks = this.paychecksFrom(today, 3).slice(0, 4).map(p => {
+      const days = Math.round((p.date - startD) / 86400000);
+      const when = `${this.dateLabel(p.date)} · ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : 'in ' + days + ' days'}`;
+      if (p.kind.indexOf('litch') === 0) {
+        const n = this.litchCheckNum(p.date);
+        return { name: `Litch, check #${n} of month`, amount: '~$2,100', date: when, allocation: n === 1 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, Pet ${this.fmt(cfg.pet)}, rest to cascade` : n === 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, rest to cascade` : 'No fixed jobs. All of it goes to the cascade.' };
+      }
+      if (p.kind === 'liv15') return { name: 'Liv, 15th', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 16th to month-end bills (${this.fmt(this.reserveWindow('liv15'))}), Groceries, Gas, Grooming to cap, rest to cascade` };
+      return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Life Fund to cap, Misc ${this.fmt(cfg.misc)}, ${this.decorActive() ? 'Decor ' + this.fmt(cfg.decor) + ', ' : ''}Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
+    });
+
+    const income = 2 * 2100 + 2 * 2720.17;
+    const decor = this.decorActive() ? cfg.decor : 0;
+    const out = 2 * cfg.rent + 2 * cfg.family + cfg.pet + 2 * cfg.fun + this.monthlyBills(false) + cfg.groceries + cfg.gas + cfg.grooming + cfg.lifeF + cfg.misc + decor + cfg.vacation + (carRepaymentLeft > 0 ? cfg.carRepay : 0);
+    const surplus = Math.max(1, income - out);
+    const surplusNote = `About ${this.fmt(income)} in − ${this.fmt(out)} out = ${this.fmt(income - out)} a month reaches the cascade${decor ? ` (${this.fmt(income - out + decor)} once Home/Decor ends)` : ''}.`;
+    const gaps = [['Credit card payoff', owed, 'Cleared first, before Float gets anything'], ['Float', Math.max(0, floatT - floatReserved), 'One month of bills'], ['Emergency Fund, 3 mo', Math.max(0, ef1 - this.effSav(core, 'ef')), `Unlocks Car Fund and ${this.fmt(cfg.ef2)}/mo stage 2`], ['Car Fund', Math.max(0, cfg.carTarget - this.effSav(core, 'car')), 'Starts once EF stage 1 is full']];
+    let cum = 0;
+    const cascadeForecasts = gaps.map(([goal, gap, note]) => {
+      cum += gap;
+      const eta = new Date(today.getFullYear(), today.getMonth() + Math.ceil(cum / surplus), 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      return { goal, remaining: this.fmt(gap), note: `${gap < 0.005 ? 'Funded' : 'Done around ' + eta} · ${note}` };
+    });
+
+    const groupA = { groceries: 1, gas: 1, grooming: 1 };
+    const paceNames = { groceries: 'Groceries', gas: 'Gas', grooming: 'Grooming', lifeF: 'Life Fund' };
+    const paceItems = ['groceries', 'gas', 'grooming', 'lifeF'].map(k => {
+      const cap = caps[k], spent = cap - eb[k];
+      const elapsed = groupA[k] ? Math.max(0.05, Math.min(1, (d - 15) / (dim - 15))) : Math.max(0.05, d / dim);
+      const hot = (spent / cap) / elapsed > 1.15;
+      return { name: paceNames[k], pace: `${Math.round(spent / cap * 100)}% used`, color: hot ? P.clay : P.ink, note: `${this.fmt(spent)} of ${this.fmt(cap)} spent with ${Math.round(elapsed * 100)}% of the ${groupA[k] ? '15th to month-end' : 'month'} gone${hot ? ', running hot' : ''}` };
+    });
+
+        const logAmountNum = parseFloat(s.logAmount);
+    const fmt0 = n => (n < 0 ? '-$' : '$') + Math.round(Math.abs(n)).toLocaleString('en-US');
+    const rv = s.rev, ease = x => 1 - Math.pow(1 - x, 3);
+    const shape = p => rv >= 1 ? p : (rv < 0.5 ? 100 * ease(rv / 0.5) : 100 - (100 - p) * ease((rv - 0.5) / 0.5));
+    const barScale = rv >= 1 ? 1 : ease(Math.min(1, rv / 0.6));
+    const claims = [
+      { label: 'Float', value: floatReserved, color: '#9DB8C7' },
+      { label: 'Bills by ' + nextEnd, value: billsDue, color: '#E5C79A' },
+      { label: 'In envelopes', value: held, color: '#C9B8D9' },
+    ].filter(c => c.value > 0.004);
+    const claimsTotal = claims.reduce((a, c) => a + c.value, 0);
+    const freeAmt = Math.max(0, checking - claimsTotal);
+    const denomBar = Math.max(checking, claimsTotal, 1);
+    const segList = [...claims, ...(freeAmt > 0.004 ? [{ label: 'Free', value: freeAmt, color: P.sage }] : [])];
+    const segments = segList.map(c => ({ w: (c.value / denomBar * 100 * barScale).toFixed(2), color: c.color }));
+    const legend = segList.map(c => ({ label: c.label, amount: this.fmt(c.value), color: c.color }));
+    const heroNumber = this.fmt(rv >= 1 || safeToMove <= 0 ? safeToMove : safeToMove * ease(Math.min(1, rv / 0.65))), heroColor = safeToMove < 0 ? P.clay : P.ink;
+    const heroSub = safeToMove < 0 ? `Short by ${this.fmt(-safeToMove)}. The next check closes this first.` : `${this.fmt(checking)} in checking, ${this.fmt(claimsTotal)} already spoken for`;
+    const ringCap = k => caps[k] || (k === 'misc' ? cfg.misc : cfg.decor) || 1;
+    const rings = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => { const bal = eb[k], p = Math.max(0, Math.min(100, bal / ringCap(k) * 100)); return { name: Component.ENV_NAMES[k], short: fmt0(bal), dash: (shape(p) / 100 * 226.19).toFixed(2), dashOpacity: shape(p) > 0.5 ? 1 : 0, scale: s.pulse === k ? 1.1 : 1, color: bal < 0 ? P.clay : (p < 20 ? '#D8A657' : P.sage), balColor: bal < 0 ? P.clay : P.ink, onClick: () => this.setState({ logOpen: true, logEnvelope: k }) }; });
+    const topTabs = [['pool', 'Pool'], ['month', 'Month'], ['flow', 'Flow'], ['books', 'Books']].map(([k, l]) => ({ label: l, color: activeTab === k ? P.ink : P.faint, line: activeTab === k ? P.sage : 'transparent', onClick: () => { this.setState({ activeTab: k }); window.scrollTo(0, 0); } }));
+    const booksTabs = [['ledger', 'Ledger'], ['accounts', 'Accounts'], ['insights', 'Insights']].map(([k, l]) => ({ label: l, bg: s.booksTab === k ? P.card : 'transparent', weight: s.booksTab === k ? '600' : '500', onClick: () => this.setState({ booksTab: k }) }));
+    // month
+    const cy = new Date(today.getFullYear(), today.getMonth() + s.calMonth, 1), cdim = new Date(cy.getFullYear(), cy.getMonth() + 1, 0).getDate();
+    const payMap = {}, addPay = (dt, name, amt) => { if (dt.getFullYear() === cy.getFullYear() && dt.getMonth() === cy.getMonth()) (payMap[dt.getDate()] = payMap[dt.getDate()] || []).push({ name, amt }); };
+    addPay(this.weekdayAdjust(new Date(cy.getFullYear(), cy.getMonth(), 15)), 'Liv, 15th', 2720.17);
+    addPay(this.weekdayAdjust(new Date(cy.getFullYear(), cy.getMonth() + 1, 0)), 'Liv, month end', 2720.17);
+    this.litchChecks().forEach(x => addPay(x, 'Litch, check #' + this.litchCheckNum(x), 2100));
+    const billMap = {}; bills.forEach(bl => { const dd = Math.min(bl.day, cdim); (billMap[dd] = billMap[dd] || []).push(bl); });
+    const selDay = s.calDay || (s.calMonth === 0 ? d : 1);
+    const calCells = [];
+    for (let i = 0; i < cy.getDay(); i++) calCells.push({ num: '', opacity: 0, bg: 'transparent', fg: P.ink, ring: 'transparent', bill: false, pay: false, onClick: () => {} });
+    for (let dd = 1; dd <= cdim; dd++) {
+      const isSel = dd === selDay, isToday = s.calMonth === 0 && dd === d;
+      calCells.push({ num: dd, opacity: 1, bg: isSel ? P.ink : 'transparent', fg: isSel ? P.bg : P.ink, ring: isToday && !isSel ? P.sage : 'transparent', bill: !!billMap[dd], billColor: (s.calMonth === 0 && (billMap[dd] || []).every(bl => this.billPaid(bl, today))) ? P.gray : '#D9A05B', pay: !!payMap[dd], onClick: () => this.setState({ calDay: dd }) });
+    }
+    const monthTitle = cy.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const calPrev = () => this.calShift(-1), calNext = () => this.calShift(1);
+    const calTouchStart = e => { this._tx = e.touches[0].clientX; }, calTouchEnd = e => { const dx = e.changedTouches[0].clientX - this._tx; if (Math.abs(dx) > 50) this.calShift(dx < 0 ? 1 : -1); };
+    const dayItems = [...(payMap[selDay] || []).map(p => ({ label: p.name, amount: '+' + this.fmt(p.amt), color: P.sage })), ...(billMap[selDay] || []).map(bl => ({ label: bl.name + (s.calMonth === 0 ? (this.billPaid(bl, today) ? ' · paid' : ' · due') : ''), amount: '-' + this.fmt(bl.amount).replace('-', ''), color: P.ink }))];
+    const dayTitle = new Date(cy.getFullYear(), cy.getMonth(), selDay).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const dayEmpty = dayItems.length === 0 ? 'Nothing due or landing this day.' : '';
+    // flow
+    const rowsRaw = check ? checkRows : previewRows, jobsRef = check ? check.jobs : previewJobs;
+    const flowRows = rowsRaw.map((r, i) => { const j = jobsRef[i], st = j.status; return { label: r.label.replace(' ✓', '').replace(' (skipped)', ''), amount: r.amount, note: r.note, tone: r.tone, opacity: r.opacity, mark: st === 'done' ? '✓' : st === 'skipped' ? '–' : '', circleBg: st === 'done' ? P.sage : 'transparent', circleBorder: st === 'done' ? P.sage : P.line2, showSkip: !!check && st === 'todo' && j.skippable, onTap: (check && st === 'todo') ? () => this.confirmJob(j.key) : () => {}, onSkip: () => this.skipJob(j.key) }; });
+    // log sheet
+    const amountDisplay = '$' + (s.logAmount ? (s.logAmount.split('.')[0] === '' ? '0' : Number(s.logAmount.split('.')[0]).toLocaleString('en-US')) + (s.logAmount.indexOf('.') >= 0 ? '.' + s.logAmount.split('.')[1] : '') : '0');
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map(k => ({ label: k, onClick: () => this.pressKey(k) }));
+    const logEnvChips = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ label: Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.ink : 'transparent', color: s.logEnvelope === k ? P.bg : P.ink, border: s.logEnvelope === k ? P.ink : P.line2, onClick: () => this.setState({ logEnvelope: k }) }));
+    const logCardChips = [['', 'Checking'], ['discover', 'Discover'], ['chase', 'Chase'], ['citi', 'Citi']].map(([k, l]) => ({ label: l, color: s.logCard === k ? P.ink : P.faint, line: s.logCard === k ? P.sage : 'transparent', onClick: () => this.setState({ logCard: k }) }));
+    const logButtonLabel = logAmountNum > 0 ? 'Log ' + this.fmt(logAmountNum) + ' to ' + Component.ENV_NAMES[s.logEnvelope || 'misc'] : 'Enter an amount';
+
+    const openS = s.openSecs || {};
+    const mkSec = (k, sum) => ({ open: !!openS[k], chev: openS[k] ? '−' : '+', sum, onClick: () => this.setState({ openSecs: { ...(this.state.openSecs || {}), [k]: !(this.state.openSecs || {})[k] } }) });
+    const envNet = Object.keys(eb).reduce((a, k) => a + Math.max(eb[k], 0), 0), envOver = Object.keys(eb).reduce((a, k) => a + Math.max(-eb[k], 0), 0);
+    const hotCount = paceItems.filter(p => p.color === P.clay).length;
+    const lead = alerts[0], restAlerts = alerts.slice(1);
+    const rcDefs = [['checking', 'Checking (Ally joint)', checking], ['rent', 'Rent-holding', s.rentHolding], ...['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].map(k => ['sav:' + k, { ef: 'Emergency Fund', car: 'Car Fund', family: 'Family (Ghana)', vacation: 'Vacation', pet: 'Pet Fund', house: 'House', wedding: 'Wedding' }[k], savings[k]]), ...['discover', 'chase', 'citi'].map(k => ['card:' + k, Component.CARD_NAMES[k] + ' (owed)', cards[k]])];
+    const reconRows = rcDefs.map(([k, name, app]) => { const raw = (s.recon || {})[k], v = parseFloat(raw), has = raw !== undefined && raw !== '' && !isNaN(v), diff = has ? this.r2(v - app) : 0; return { name, app: this.fmt(app), value: raw === undefined ? '' : raw, diffText: has ? (Math.abs(diff) < 0.005 ? ' · matches' : ' · ' + (diff > 0 ? '+' : '-') + this.fmt(Math.abs(diff)).replace('-', '')) : '', color: has && Math.abs(diff) >= 0.005 ? P.clay : P.sage, onInput: e => this.setState({ recon: { ...(this.state.recon || {}), [k]: e.target.value } }) }; });
+    const reconCount = reconRows.filter(r => r.value !== '' && !isNaN(parseFloat(r.value))).length;
+    const sec = {
+      cas: mkSec('cas', tierLabels[activeKey]), chk: mkSec('chk', this.fmt(checking)), sav: mkSec('sav', this.fmt(effSavTotal + s.rentHolding)),
+      card: mkSec('card', owed > 0.004 ? this.fmt(owed) + ' owed' : 'Paid off'), env: mkSec('env', this.fmt(envNet) + (envOver > 0.004 ? ' held' : '')),
+      recon: mkSec('recon', ''), bills: mkSec('bills', this.fmt(this.monthlyBills(true)) + '/mo'), plan: mkSec('plan', ''), backup: mkSec('backup', s.sync === 'live' ? 'Saved' : ''),
+      more: mkSec('more', restAlerts.length + (restAlerts.length === 1 ? ' more' : ' more')), pay: mkSec('pay', upcomingPaychecks.length ? upcomingPaychecks[0].date.split(' · ')[0] : ''),
+      fc: mkSec('fc', ''), pace: mkSec('pace', hotCount ? hotCount + ' running hot' : 'on pace'),
+    };
+    const acctChk = accountRows.slice(0, 2), acctSav = [accountRows[2], ...accountRows.slice(3, 10), accountRows[13]], acctCard = accountRows.slice(10, 13), acctEnv = accountRows.slice(14);
+
+    return {
+      todayLabel: this.dateLabel(today), toggleDark: this.toggleDark, toggleHide: this.toggleHide, isDark: s.dark, notDark: !s.dark, hideOn: s.hide, hideOff: !s.hide, hideBg: s.hide ? P.line : 'transparent',
+      themeVars: { display: 'contents', '--bg': P.bg, '--card': P.card, '--ink': P.ink, '--muted': P.muted, '--faint': P.faint, '--line': P.line, '--line2': P.line2, '--key': P.key, '--key2': P.key2, '--sage': P.sage, '--clay': P.clay, '--mint': P.mint, '--mintFg': P.mintFg, '--clayBg': P.clayBg, '--clayFg': P.clayFg, '--paper': P.paper, '--onSage': P.onSage }, topTabs, booksTabs, showPool: activeTab === 'pool', showMonth: activeTab === 'month', showFlow: activeTab === 'flow', showBooks: activeTab === 'books',
+      showLedger: activeTab === 'books' && s.booksTab === 'ledger', showAccounts: activeTab === 'books' && s.booksTab === 'accounts', showInsights: activeTab === 'books' && s.booksTab === 'insights',
+      goFlow: () => { this.setState({ activeTab: 'flow' }); window.scrollTo(0, 0); },
+      heroNumber, heroColor, heroSub, segments, legend, rings, monthTitle, calCells, calPrev, calNext, prevOpacity: s.calMonth <= -2 ? 0.3 : 1, nextOpacity: s.calMonth >= 11 ? 0.3 : 1, calTouchStart, calTouchEnd, dayTitle, dayItems, dayEmpty,
+      flowRows, openLog: () => this.setState({ logOpen: true }), closeLog: () => this.setState({ logOpen: false }), logOpen: s.logOpen, amountDisplay, keys, logEnvChips, logCardChips, logButtonLabel,
+      hasFlash: !!s.flash, flash: s.flash, undoFlash: this.undoFlash,
+      splashOn: s.splash !== 'done', skipSplash: this.skipSplash, splashBg: s.splash === 'out' ? 0 : 1, flyX: s.flyX, flyY: s.flyY, flyS: s.flyS,
+      arcAnim: `lvArc ${(s.splashShort ? 0.6 : 1.7).toFixed(2)}s cubic-bezier(.3,.05,.2,1.12) ${(s.splashShort ? 0.07 : 0.2).toFixed(2)}s both`, wordAnim: `lvRise ${(s.splashShort ? 0.3 : 0.7).toFixed(2)}s ease ${(s.splashShort ? 0.45 : 1.5).toFixed(2)}s both`, subAnim: `lvRise ${(s.splashShort ? 0.3 : 0.7).toFixed(2)}s ease ${(s.splashShort ? 0.65 : 1.95).toFixed(2)}s both`,
+      syncLabel: { live: 'Saved', cached: 'Offline copy', offline: 'Offline', signin: 'Sign in', connecting: 'Connecting' }[s.sync] || '', syncColor: s.sync === 'live' ? P.sage : (s.sync === 'connecting' ? P.gray : P.clay),
+      needSignIn: s.needSignIn, authEmail: s.authEmail, authPass: s.authPass, authError: s.authError, setAuthEmail: e => this.setState({ authEmail: e.target.value }), setAuthPass: e => this.setState({ authPass: e.target.value }), doSignIn: this.doSignIn, doSignOut: this.doSignOut, signedIn: s.signedIn, exportBackup: this.exportBackup,
+      snapRows: Object.keys(s.snapshots || {}).sort().reverse().map(k => { const sn = s.snapshots[k]; return { label: new Date(k + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), sub: 'Checking ' + this.fmt(sn.core.checking), btn: s.confirmKey === k ? 'Tap again to restore' : 'Restore', btnBg: s.confirmKey === k ? P.clay : P.card, btnFg: s.confirmKey === k ? P.onSage : P.ink, onRestore: () => this.restoreSnap(k) }; }),
+      sec, reconRows, applyRecon: this.applyRecon, exportCalendar: this.exportCalendar, reconReady: reconCount ? 1 : 0.4, reconLabel: reconCount ? 'Apply ' + reconCount + ' difference' + (reconCount === 1 ? '' : 's') : 'Enter a bank balance above', acctChk, acctSav, acctCard, acctEnv, leadBg: lead.bg, leadFg: lead.fg, leadTitle: lead.title, leadMessage: lead.message, restAlerts, hasRest: restAlerts.length > 0,
+      askOpen: !!s.ask, askTitle: s.ask ? s.ask.title : '', askValue: s.ask ? s.ask.value : '', setAsk: e => this.setState({ ask: { ...this.state.ask, value: e.target.value } }), saveAsk: this.saveAsk, closeAsk: () => this.setState({ ask: null }),
+      hasBanner: banners.length > 0, bannerText,
+      setMerchant: e => this.setState({ logMerchant: e.target.value }), setAmount: e => this.setState({ logAmount: e.target.value }),
+      logMerchant: s.logMerchant, logAmount: s.logAmount, logTransaction: this.logTransaction, logReady: logAmountNum > 0 ? 1 : 0.4,
+      envChips, cardChips, comingUp,
+      checkIdle: !check, checkActive: !!check,
+      postKindValue: kindNow, postAmountPlaceholder: String(amtNow), postAmountValue: s.postAmount,
+      setPostKind: e => this.setState({ postKind: e.target.value }), setPostAmount: e => this.setState({ postAmount: e.target.value }),
+      startCheck: this.startCheck, confirmAll: this.confirmAll, finishCheck: this.finishCheck, finishOpacity: openSteps === 0 ? 1 : 0.35,
+      checkTitle: check ? check.name : '', checkSub: check ? `${this.fmt(check.amount)} landed in checking · ${openSteps} step${openSteps === 1 ? '' : 's'} left` : '',
+      previewRows, checkRows, hasPending: s.pending.length > 0, pendingRows,
+      undoLast: this.undoLast, undoOpacity: s.undoStack.length ? 1 : 0.35, undoLabel: s.undoStack.length ? 'Undo (' + s.undoStack.length + ')' : 'Undo last', historyItems, noHistory: historyItems.length === 0,
+      totalBalance: this.fmt(totalBalance), checkingDisplay: this.fmt(checking),
+      safeToMove: this.fmt(safeToMove), safeColor: safeToMove < 0 ? P.clay : P.bg, safeNote,
+      cascadeItems, envelopes, accountRows, billsThisMonth, billEditRows, cfgRows,
+      billsView: !s.editBills, billsEdit: s.editBills, toggleBillEdit: () => this.setState({ editBills: !s.editBills }),
+      billEditLabel: s.editBills ? 'Done' : 'Edit', billEditBg: s.editBills ? P.sage : P.card, billEditFg: s.editBills ? P.onSage : P.ink, addBill: this.addBill,
+      billsTotal: this.fmt(this.monthlyBills(true)),
+      alerts, upcomingPaychecks, cascadeForecasts, surplusNote, paceItems,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
