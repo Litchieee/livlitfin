@@ -589,9 +589,10 @@ class Component extends DCLogic {
   }
 
   ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  bm(b) { return { Nuuly: { dayEnd: 5 }, Electric: { variable: true } }[b.name] || {}; }
   billPaid(b, today) {
     const flag = ((this.state.billFlags || {})[this.ymOf(today)] || {})[b.name];
-    return flag === 'paid' || (flag !== 'unpaid' && b.day < today.getDate());
+    return flag === 'paid' || (flag !== 'unpaid' && (this.bm(b).dayEnd || b.day) < today.getDate());
   }
   billsBeforeNextCheck(today) {
     const d = today.getDate(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -603,7 +604,13 @@ class Component extends DCLogic {
     if (!b) return;
     const paidNow = this.billPaid(b, today), flags = { ...(this.state.billFlags || {}) };
     flags[ym] = { ...(flags[ym] || {}), [name]: paidNow ? 'unpaid' : 'paid' };
-    this.save({ billFlags: flags });
+    const patch = { billFlags: flags };
+    if (!paidNow && this.bm(b).variable) {
+      const v = window.prompt('What was the actual ' + name + ' bill this month? Leave blank to keep ' + this.fmt(b.amount) + '.', '');
+      const n = parseFloat(v);
+      if (v !== null && !isNaN(n) && n > 0) patch.bills = this.state.bills.map(x => x.name === name ? { ...x, amount: this.r2(n) } : x);
+    }
+    this.save(patch);
   }
   reserveWindow(kind) {
     let sum = 0;
@@ -1010,7 +1017,7 @@ class Component extends DCLogic {
       { name: 'Car repayment left', sub: 'Owed back to Car Fund', balance: this.fmt(carRepaymentLeft), color: P.ink, onSet: () => this.setBalance('carLeft', null, 'Car repayment left', carRepaymentLeft) },
       ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ name: Component.ENV_NAMES[k] + ' envelope', sub: 'Label inside checking', balance: this.fmt(eb[k]), color: eb[k] < 0 ? P.clay : P.ink, onSet: () => this.setBalance('env', k, Component.ENV_NAMES[k], eb[k]) })),
     ];
-    const billsThisMonth = [...bills].map(b => { const paid = this.billPaid(b, today); return { name: b.name, day: b.day, daySuffix: this.suffix(b.day), amount: this.fmt(b.amount), opacity: paid ? 0.5 : 1, status: paid ? 'Paid' : 'Due', note: b.next ? `${this.fmt(b.next.amount)} from ${new Date(b.next.from + '-01T12:00:00').toLocaleDateString('en-US', { month: 'short' })}` : '', pillBg: paid ? P.mint : P.clayBg, pillFg: paid ? P.mintFg : P.clayFg, onToggle: () => this.toggleBill(b.name) }; }).sort((a, b) => a.day - b.day);
+    const billsThisMonth = [...bills].map(b => { const paid = this.billPaid(b, today); return { name: b.name, day: b.day, daySuffix: this.suffix(b.day) + (this.bm(b).dayEnd ? '–' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : ''), amount: (this.bm(b).variable ? '~' : '') + this.fmt(b.amount), opacity: paid ? 0.5 : 1, status: paid ? 'Paid' : 'Due', note: this.bm(b).variable && !b.next ? 'Varies with usage, enter the real amount when paid' : this.bm(b).dayEnd && !b.next ? 'Posts any day, ' + b.day + this.suffix(b.day) + ' to ' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : b.next ? `${this.fmt(b.next.amount)} from ${new Date(b.next.from + '-01T12:00:00').toLocaleDateString('en-US', { month: 'short' })}` : '', pillBg: paid ? P.mint : P.clayBg, pillFg: paid ? P.mintFg : P.clayFg, onToggle: () => this.toggleBill(b.name) }; }).sort((a, b) => a.day - b.day);
     const billEditRows = bills.map((b, i) => ({ name: b.name, day: b.day, amount: b.amount, onName: e => this.setBill(i, 'name', e.target.value), onDay: e => this.setBill(i, 'day', e.target.value), onAmount: e => this.setBill(i, 'amount', e.target.value), onDelete: () => this.delBill(i) }));
     const cfgDefs = [['groceries', 'Groceries cap', 'Funded on the 15th'], ['gas', 'Gas cap', 'Funded on the 15th'], ['grooming', 'Grooming cap', 'Funded on the 15th'], ['lifeF', 'Life Fund cap', 'Funded at month end'], ['misc', 'Misc per month', 'Uncapped, month end'], ['decor', 'Home/Decor per month', 'Ends after Nov 2026'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family Support per check', 'Litch #1 and #2'], ['pet', 'Pet Fund', 'Litch #1 only'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
     const cfgRows = cfgDefs.map(([k, l, sub]) => ({ label: l, sub, value: cfg[k], onInput: e => this.setCfg(k, e.target.value) }));
