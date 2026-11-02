@@ -1,0 +1,12 @@
+{
+  "name": "LivLit",
+  "short_name": "LivLit",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF5EA",
+  "theme_color": "#FAF5EA",
+  "icons": [
+    { "src": "./LivLit-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "./LivLit-icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
