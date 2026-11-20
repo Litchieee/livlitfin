@@ -481,8 +481,8 @@ class Component extends DCLogic {
   state = {
     checking: 1338.11,
     floatReserved: 633.63,
-    envelopeBalances: { groceries: -103.00, gas: 0.00, grooming: -105.00, lifeF: 100.00, misc: 100.55, homeDecor: 11.05 },
-    savings: { ef: 2303.32, car: 2121.71, family: 150.00, vacation: 223.57, pet: 110.42, house: 0, wedding: 0 },
+    envelopeBalances: { groceries: 0, gas: 0, lifeF: 0, health: 0, fam: 0 },
+    savings: { ef: 2303.32, car: 2121.71, vacation: 223.57, house: 0, wedding: 0 },
     cards: { discover: 299.00, amex: 0, chase: 0, citi: 0 },
     cardCharges: 0,
     rentHolding: 0,
@@ -491,7 +491,7 @@ class Component extends DCLogic {
     efStage: 1,
     pending: [],
     check: null,
-    cfg: { groceries: 550, gas: 80, grooming: 300, lifeF: 500, misc: 200, decor: 400, fun: 800, vacation: 125, pet: 100, family: 150, rent: 1475, carRepay: 150, ef2: 300, carTarget: 25000, houseTarget: 35000, weddingTarget: 20000 },
+    cfg: { groceries: 650, gas: 150, lifeF: 600, health: 150, fun: 800, vacation: 125, family: 150, rent: 1455.5, carRepay: 150, ef2: 300, carTarget: 25000, houseTarget: 35000, weddingTarget: 20000 },
     bills: [
       { name: 'Rent', day: 1, amount: 2950.00 },
       { name: 'Nuuly', day: 1, amount: 106.09 },
@@ -511,7 +511,7 @@ class Component extends DCLogic {
       { name: 'Hatch (annual)', day: 26, amount: 49.99, annual: true, month: 8 },
     ],
     history: [],
-    owedBack: [], assign: null, cpCard: 'discover', cpAmt: '', cpFloat: '', cpEnvs: ['groceries', 'lifeF', 'misc', 'grooming'], obLabel: '', obAmt: '', obEnv: 'misc',
+    owedBack: [], assign: null, cpCard: 'discover', cpAmt: '', cpFloat: '', cpEnvs: ['groceries', 'lifeF'], obLabel: '', obAmt: '', obEnv: 'lifeF',
     undo: null, undoStack: [], recon: {}, holds: [], holdLabel: '', holdAmt: '', breakOpen: false, logIn: false,
     postKind: '', postAmount: '',
     logMerchant: '', logAmount: '', logEnvelope: 'groceries', logCard: '',
@@ -519,11 +519,15 @@ class Component extends DCLogic {
     editBills: false, inbox: [], learn: {}, fun: { me: false, liv: false }, moneyTab: 'overview', planTab: '', who: (() => { try { return localStorage.getItem('lv_who') === 'liv' ? 'liv' : 'me'; } catch (e) { return 'me'; } })(), sheet: null, qrot: 0, openSort: null, afAmt: '', afEnv: 'groceries', paste: '', mvAmt: '', mvTo: '',
   };
 
-  static ENV_NAMES = { groceries: 'Groceries', gas: 'Gas', grooming: 'Grooming', lifeF: 'Life Fund', misc: 'Misc', homeDecor: 'Home/Decor' };
+  static ENV_NAMES = { groceries: 'Groceries', gas: 'Car', lifeF: 'Life', health: 'Health & Pet', fam: 'Family', holiday: 'Holiday' };
+  static ENV_BASE = ['groceries', 'gas', 'lifeF', 'health', 'fam'];
+  static HOLIDAY = { amount: 500, from: new Date(2026, 10, 25), to: new Date(2027, 0, 1) };
+  static holidayOn() { const d = new Date(); return d >= Component.HOLIDAY.from && d < Component.HOLIDAY.to; }
+  static get ENV_KEYS() { return (Component.holidayOn() || Math.abs(Component._holBal || 0) > 0.004) ? [...Component.ENV_BASE, 'holiday'] : Component.ENV_BASE; }
   static CARD_NAMES = { discover: 'Discover', amex: 'Liv American card', chase: 'Chase', citi: 'Citi' };
   static CARD_KEYS = ['discover', 'amex', 'chase', 'citi'];
   static CARD_DUE = { discover: 16, amex: 27 };
-  static PERSIST = ['inbox', 'learn', 'fun', 'checking', 'floatReserved', 'envelopeBalances', 'savings', 'cards', 'cardCharges', 'rentHolding', 'rentPaidMonth', 'carRepaymentLeft', 'efStage', 'pending', 'check', 'cfg', 'bills', 'billFlags', 'holds'];
+  static PERSIST = ['inbox', 'learn', 'fun', 'checking', 'floatReserved', 'envelopeBalances', 'savings', 'cards', 'cardCharges', 'rentHolding', 'rentPaidMonth', 'carRepaymentLeft', 'efStage', 'pending', 'check', 'cfg', 'bills', 'billFlags', 'holds', 'bucketsV2', 'holidayFunded'];
 
   componentDidMount() {
     this._hlOK = true; this.paintHide();
@@ -543,7 +547,9 @@ class Component extends DCLogic {
           ['checking', 'floatReserved', 'cardCharges', 'rentHolding', 'carRepaymentLeft'].forEach(k => { if (typeof d[k] === 'number') p[k] = d[k]; });
           if (typeof d.rentPaidMonth === 'string') p.rentPaidMonth = d.rentPaidMonth;
           if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
-          if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = d.envelopeBalances;
+          if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = this.migrateEnv(d.envelopeBalances);
+          if (d.bucketsV2) p.bucketsV2 = true;
+          if (typeof d.holidayFunded === 'number') p.holidayFunded = d.holidayFunded;
           if (d.savings && typeof d.savings.ef === 'number') p.savings = { house: 0, wedding: 0, ...d.savings };
           if (d.cards && typeof d.cards.discover === 'number') p.cards = { amex: 0, chase: 0, citi: 0, ...d.cards };
           else if (d.savings && typeof d.savings.discover === 'number') p.cards = { discover: d.savings.discover, amex: 0, chase: 0, citi: 0 };
@@ -564,7 +570,7 @@ class Component extends DCLogic {
           if (Array.isArray(d.inbox)) p.inbox = d.inbox.filter(x => x && typeof x.id === 'string' && typeof x.amount === 'number');
           if (d.learn && typeof d.learn === 'object') p.learn = d.learn;
           if (d.fun && typeof d.fun === 'object') p.fun = { me: !!d.fun.me, liv: !!d.fun.liv };
-          this.setState(p, () => { this._loaded = true; this.housekeeping(); });
+          this.setState(p, () => { this._loaded = true; this.migrateV2(); this.housekeeping(); });
         } else { this._rev = 0; this._loaded = true; this.housekeeping(); }
         this.setState({ sync: snap.metadata && snap.metadata.fromCache ? 'cached' : 'live', needSignIn: false });
       }, (err) => { this._sub = null; if (err && err.code === 'permission-denied') this.setState({ needSignIn: true, sync: 'signin', authError: this.state.signedIn ? 'Signed in, but Firebase blocked the data.' : '' }); else this.setState({ sync: 'offline' }); }, { includeMetadataChanges: true });
@@ -628,7 +634,7 @@ class Component extends DCLogic {
     return pcs.sort((a, b) => a.date - b.date);
   }
   nextKind(today) { return this.paychecksFrom(today, 2)[0].kind; }
-  decorActive() { return new Date() < new Date(2026, 11, 1); }
+  decorActive() { return false; }
 
   // targets derived from the bill list
   monthlyBills(includeRent) { return this.state.bills.reduce((a, b) => a + (b.name === 'Rent' && !includeRent ? 0 : b.annual ? b.amount / 12 : b.amount), 0); }
@@ -637,7 +643,7 @@ class Component extends DCLogic {
   ef1T() { return this.r2(this.floatBase() * 3); }
   ef2T() { return this.r2(this.floatBase() * 6); }
   num(n) { return typeof n === 'number' && !isNaN(n) ? n : 0; }
-  caps() { const c = this.state.cfg; return { groceries: c.groceries, gas: c.gas, grooming: c.grooming, lifeF: c.lifeF }; }
+  caps() { const c = this.state.cfg; return { groceries: c.groceries, gas: c.gas, lifeF: c.lifeF, health: c.health }; }
 
   core() {
     const s = this.state, o = {};
@@ -768,22 +774,21 @@ class Component extends DCLogic {
     };
     if (kind === 'litch1' || kind === 'litch2') {
       add({ key: 'rent', label: 'Rent-holding', type: 'rent', want: g.rent, note: 'Moves to savings, pays rent on the 1st' });
-      add({ key: 'family', label: 'Family Support', type: 'transfer', want: g.family, dest: 'family', skippable: true });
-      if (kind === 'litch1') add({ key: 'pet', label: 'Pet Fund', type: 'transfer', want: g.pet, dest: 'pet', skippable: true, allOrNothing: true });
+      add({ key: 'family', label: 'Family envelope', type: 'add', want: g.family, envKey: 'fam', skippable: true, note: 'Stays in checking for Remitly' });
     }
     if (kind === 'liv15' || kind === 'livEnd') {
       add({ key: 'fun', label: 'Fun money, both people', type: 'fun', want: g.fun, note: 'To individual accounts, untracked after' });
       add({ key: 'reserve', label: kind === 'liv15' ? 'Reserve bills, 16th to month end' : 'Reserve bills, 1st to 15th', type: 'info', want: this.reserveWindow(kind), note: 'Stays in checking, held for bills' });
-      if (kind === 'liv15') { refill('groceries', 'Groceries to cap'); refill('gas', 'Gas to cap'); refill('grooming', 'Grooming to cap'); }
+      if (kind === 'liv15') { refill('gas', 'Car to cap'); refill('lifeF', 'Life to cap, 15th to month end'); }
       else {
-        refill('lifeF', 'Life Fund to cap');
-        add({ key: 'misc', label: 'Misc', type: 'add', want: g.misc, envKey: 'misc' });
+        refill('groceries', 'Groceries to cap'); refill('health', 'Health & Pet to cap'); refill('lifeF', 'Life to cap, 1st to 15th');
         if (this.decorActive()) add({ key: 'decor', label: 'Home/Decor', type: 'add', want: g.decor, envKey: 'homeDecor', note: 'Ends after Nov 2026' });
         add({ key: 'vacation', label: 'Vacation', type: 'transfer', want: g.vacation, dest: 'vacation', skippable: true });
         if (s.carRepaymentLeft > 0) add({ key: 'carRepay', label: 'Car Fund repayment', type: 'carRepay', want: Math.min(g.carRepay, s.carRepaymentLeft), skippable: true, note: `${this.fmt(s.carRepaymentLeft)} left to repay` });
         if (s.efStage === 2) add({ key: 'ef2', label: 'Emergency Fund stage 2', type: 'transfer', want: g.ef2, dest: 'ef' });
       }
     }
+    if (Component.holidayOn()) { const left = this.r2(Component.HOLIDAY.amount - (s.holidayFunded || 0)); if (left > 0.004) add({ key: 'holiday', label: 'Holiday envelope, December only', type: 'add', want: left, envKey: 'holiday', skippable: true, note: 'One time, gifts only. Closes Jan 1, leftover goes to the cascade' }); }
     const rsvJob = jobs.filter(j => j.key === 'reserve').reduce((a, j) => a + j.amount, 0), now = new Date();
     // Only add back reserve money for bills that Safe to spend already subtracted, so nothing is counted twice or freed twice.
     const inRsv = b => kind === 'liv15' ? b.day >= 16 : (b.day <= 15 && now.getDate() <= 15);
@@ -805,7 +810,7 @@ class Component extends DCLogic {
     else if (j.type === 'carRepay') { this.send(c, j.label, a, 'saving', 'car'); c.carRepaymentLeft = this.r2(c.carRepaymentLeft - a); }
     else if (j.type === 'fun') c.checking = this.r2(c.checking - a);
     else if (j.type === 'refill') { const b0 = c.envelopeBalances[j.envKey]; c.envelopeBalances[j.envKey] = this.r2(b0 < 0 ? a : b0 + a); }
-    else if (j.type === 'add') c.envelopeBalances[j.envKey] = this.r2(c.envelopeBalances[j.envKey] + a);
+    else if (j.type === 'add') { c.envelopeBalances[j.envKey] = this.r2((c.envelopeBalances[j.envKey] || 0) + a); if (j.envKey === 'holiday') c.holidayFunded = this.r2((c.holidayFunded || 0) + a); }
     else if (j.type === 'sweep') this.distribute(c, a);
     return c;
   }
@@ -888,7 +893,7 @@ class Component extends DCLogic {
       clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 3200);
       return;
     }
-    const key = s.logEnvelope || 'misc', card = s.logCard;
+    const key = s.logEnvelope || 'lifeF', card = s.logCard;
     const next = { envelopeBalances: { ...s.envelopeBalances, [key]: this.r2(s.envelopeBalances[key] - amount) } };
     if (card) { next.cards = { ...s.cards, [card]: this.r2(s.cards[card] + amount) }; next.cardCharges = this.r2(s.cardCharges + amount); }
     else next.checking = this.r2(s.checking - amount);
@@ -913,6 +918,8 @@ class Component extends DCLogic {
     this.commit({ savings: c.savings, cards: c.cards, pending: c.pending }, 'Landed: ' + p.label, p.amount);
   }
   housekeeping() {
+    { const eb = this.state.envelopeBalances || {}, left = eb.holiday || 0;
+      if (this._loaded && !Component.holidayOn() && new Date() >= Component.HOLIDAY.to && Math.abs(left) > 0.004) { this.commit({ envelopeBalances: { ...eb, holiday: 0 } }, 'Holiday envelope closed: ' + (left > 0 ? this.fmt(left) + ' back to free money' : this.fmt(-left) + ' over, already spent'), 0); return; } }
     if (!this._loaded) return;
     const s = this.state, today = new Date(), t = this.iso(today);
     const c = this.copyCore(this.core()); let changed = false; const notes = [];
@@ -1014,7 +1021,7 @@ class Component extends DCLogic {
       if (!window.confirm('Replace the numbers on both phones with the backup from ' + when + '? Checking will read ' + this.fmt(c.checking) + '. Download a backup first if you are not sure.')) return;
       const core = {}; Component.PERSIST.forEach(k => { if (k in c) core[k] = c[k]; });
       core.cards = { discover: 0, amex: 0, chase: 0, citi: 0, ...(core.cards || {}) };
-      core.savings = { house: 0, wedding: 0, ...core.savings };
+      core.savings = { house: 0, wedding: 0, ...core.savings }; core.envelopeBalances = this.migrateEnv(core.envelopeBalances);
       const old = Array.isArray(d.history) ? d.history.filter(x => x && typeof x.id === 'string' && typeof x.t === 'string' && typeof x.label === 'string' && typeof x.amt === 'number') : this.state.history;
       const history = [{ id: this.uid(), t: new Date().toISOString(), label: 'Restored from backup file (' + when + ')', amt: 0, meta: null }, ...old].slice(0, 150);
       this.setState({ ...core, history, undoStack: [{ core: this.core(), history: this.state.history }, ...this.state.undoStack].slice(0, 12) });
@@ -1023,11 +1030,35 @@ class Component extends DCLogic {
     };
     rd.readAsText(f);
   };
+  migrateEnv(eb) {
+    const e = { groceries: 0, gas: 0, lifeF: 0, health: 0, fam: 0, holiday: 0, ...(eb || {}) };
+    ['grooming', 'misc', 'homeDecor'].forEach(k => { if (typeof e[k] === 'number') e.lifeF = this.r2(e.lifeF + e[k]); delete e[k]; });
+    if (e.extra === null || e.extra === undefined) delete e.extra;
+    return e;
+  }
+  migrateV2() {
+    const s = this.state; if (s.bucketsV2) return;
+    const c = this.copyCore(this.core()), eb = this.migrateEnv(c.envelopeBalances), sv = { ...c.savings };
+    let toChk = 0;
+    const moveIn = (savKey, envKey) => {
+      const inTransit = c.pending.filter(p => p.destType === 'saving' && p.destKey === savKey).reduce((a, p) => a + p.amount, 0);
+      const amt = this.r2((sv[savKey] || 0) + inTransit);
+      eb[envKey] = this.r2(eb[envKey] + amt); toChk = this.r2(toChk + (sv[savKey] || 0)); delete sv[savKey];
+      c.checking = this.r2(c.checking + inTransit);
+      c.pending = c.pending.filter(p => !(p.destType === 'saving' && p.destKey === savKey));
+      return amt;
+    };
+    const pet = moveIn('pet', 'health'), fam = moveIn('family', 'fam');
+    const cfg = { ...c.cfg, groceries: 650, gas: 150, lifeF: 600, health: 150, family: 150 };
+    ['grooming', 'misc', 'decor', 'pet'].forEach(k => delete cfg[k]);
+    this.commit({ envelopeBalances: eb, savings: sv, pending: c.pending, checking: this.r2(c.checking + toChk), cfg, bucketsV2: true },
+      'New buckets: Pet Fund ' + this.fmt(pet) + ' to Health & Pet, Family ' + this.fmt(fam) + ' to the Family envelope, Grooming, Misc and Home/Decor into Life', 0);
+  }
   restoreSnap(key) {
     const snap = (this.state.snapshots || {})[key]; if (!snap) return;
     if (this.state.confirmKey !== key) { this.setState({ confirmKey: key }); clearTimeout(this._confT); this._confT = setTimeout(() => this.setState({ confirmKey: '' }), 4000); return; }
     this.setState({ confirmKey: '' });
-    this.commit({ ...snap.core }, 'Restored snapshot from ' + key, 0);
+    this.commit({ ...snap.core, envelopeBalances: this.migrateEnv(snap.core.envelopeBalances) }, 'Restored snapshot from ' + key, 0);
   }
   startRev = () => { clearInterval(this._cnt); const t0 = Date.now(); this._cnt = setInterval(() => { const p = Math.min(1, (Date.now() - t0) / 1900); this.setState({ rev: p }); if (p >= 1) clearInterval(this._cnt); }, 33); };
   beginOut = () => {
@@ -1046,7 +1077,7 @@ class Component extends DCLogic {
     const num = k => { const v = parseFloat(rc[k]); return (rc[k] === undefined || rc[k] === '' || isNaN(v)) ? null : this.r2(v); };
     const c = num('checking'); if (c !== null) { delta += c - s.checking; next.checking = c; n++; if (Math.abs(c - s.checking) > 0.004) ch.push(['Checking', c - s.checking]); }
     const r = num('rent'); if (r !== null) { delta += r - s.rentHolding; next.rentHolding = r; n++; if (Math.abs(r - s.rentHolding) > 0.004) ch.push(['Rent-holding', r - s.rentHolding]); }
-    ['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].forEach(k => { const v = num('sav:' + k); if (v !== null) { delta += v - (s.savings[k] || 0); next.savings[k] = v; n++; if (Math.abs(v - (s.savings[k] || 0)) > 0.004) ch.push([Component.SAV_NAMES[k], v - (s.savings[k] || 0)]); } });
+    ['ef', 'car', 'vacation', 'house', 'wedding'].forEach(k => { const v = num('sav:' + k); if (v !== null) { delta += v - (s.savings[k] || 0); next.savings[k] = v; n++; if (Math.abs(v - (s.savings[k] || 0)) > 0.004) ch.push([Component.SAV_NAMES[k], v - (s.savings[k] || 0)]); } });
     Component.CARD_KEYS.forEach(k => { const v = num('card:' + k); if (v !== null) { delta -= v - s.cards[k]; next.cards[k] = Math.max(0, v); n++; if (Math.abs(v - s.cards[k]) > 0.004) ch.push([Component.CARD_NAMES[k] + ' owed', v - s.cards[k]]); } });
     if (!n) return;
     const dc = c !== null ? this.r2(s.checking - c) : 0;
@@ -1065,9 +1096,9 @@ class Component extends DCLogic {
         ks.forEach((k, i) => { const part = i === ks.length - 1 ? left : this.r2(amt * cp[k] / tot); left = this.r2(left - part); eb[k] = this.r2(eb[k] - part); });
         label = 'Matched to bank, ' + this.fmt(amt) + ' spread across envelopes by budget';
       } else {
-        const keys = key === 'split4' ? ['groceries', 'lifeF', 'misc', 'grooming'] : [key], each = this.r2(amt / keys.length);
+        const keys = key === 'split4' ? ['groceries', 'lifeF'] : [key], each = this.r2(amt / keys.length);
         keys.forEach((k, i) => { eb[k] = this.r2(eb[k] - (i === 0 ? this.r2(amt - each * (keys.length - 1)) : each)); });
-        label = 'Matched to bank, ' + this.fmt(amt) + ' taken from ' + (key === 'split4' ? 'four envelopes' : Component.ENV_NAMES[key]);
+        label = 'Matched to bank, ' + this.fmt(amt) + ' taken from ' + (key === 'split4' ? 'two envelopes' : Component.ENV_NAMES[key]);
       }
       next.envelopeBalances = eb;
     }
@@ -1086,7 +1117,7 @@ class Component extends DCLogic {
     this.setState({ cpAmt: '', cpFloat: '', flash: 'Paid ' + Component.CARD_NAMES[card] + ' ' + this.fmt(amt) });
     clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 3200);
   };
-  addOwed = () => { const s = this.state, a = parseFloat(s.obAmt); if (!a || a <= 0) return; this.save({ owedBack: [...(s.owedBack || []), { id: this.uid(), label: (s.obLabel || '').trim() || 'Owed to us', amount: this.r2(a), env: s.obEnv || 'misc' }], obLabel: '', obAmt: '' }); };
+  addOwed = () => { const s = this.state, a = parseFloat(s.obAmt); if (!a || a <= 0) return; this.save({ owedBack: [...(s.owedBack || []), { id: this.uid(), label: (s.obLabel || '').trim() || 'Owed to us', amount: this.r2(a), env: s.obEnv || 'lifeF' }], obLabel: '', obAmt: '' }); };
   owedPaid(id) {
     const s = this.state, o = (s.owedBack || []).find(x => x.id === id); if (!o) return;
     const next = { checking: this.r2(s.checking + o.amount), owedBack: s.owedBack.filter(x => x.id !== id) };
@@ -1096,7 +1127,7 @@ class Component extends DCLogic {
     else { next.envelopeBalances = { ...s.envelopeBalances, [o.env]: this.r2(s.envelopeBalances[o.env] + o.amount) }; where = Component.ENV_NAMES[o.env]; }
     this.commit(next, o.label + ' paid back · ' + where, o.amount, { type: 'refund' });
   }
-  static SAV_NAMES = { ef: 'Emergency Fund', car: 'Car Fund', family: 'Family (Ghana)', vacation: 'Vacation', pet: 'Pet Fund', house: 'House', wedding: 'Wedding' };
+  static SAV_NAMES = { ef: 'Emergency Fund', car: 'Car Fund', vacation: 'Vacation', house: 'House', wedding: 'Wedding' };
   doMove = () => {
     const s = this.state, a = this.r2(parseFloat(s.mvAmt)), to = s.mvTo;
     const say = m => { this.setState({ flash: m }); clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({ flash: '' }), 3600); };
@@ -1178,11 +1209,12 @@ class Component extends DCLogic {
 
   // ---------- render ----------
   renderVals0() {
+    Component._holBal = ((this.state.envelopeBalances || {}).holiday) || 0;
     const P = this.pal(this.state.dark);
     const s = this.state, today = new Date(), d = today.getDate(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const { checking, floatReserved, envelopeBalances: eb, savings, cards, carRepaymentLeft, bills, activeTab, check, cfg } = s;
     const core = this.core(), caps = this.caps();
-    const effSavTotal = ['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].reduce((a, k) => a + this.effSav(core, k), 0);
+    const effSavTotal = ['ef', 'car', 'vacation', 'house', 'wedding'].reduce((a, k) => a + this.effSav(core, k), 0);
     const owed = this.cardsOwed(core);
     const totalBalance = checking + effSavTotal + s.rentHolding + this.pendTo(core, 'rent', 'rent') - owed;
     const { safe: safeToMove, billsDue, held, holds: holdsTotal, cardsOwed: cardsOwedAmt } = this.computeSafe(s, today);
@@ -1222,13 +1254,13 @@ class Component extends DCLogic {
     const mk = (name, key) => {
       const bal = eb[key], cap = caps[key], neg = bal < 0;
       const base = { name, balance: this.fmt(bal), balanceColor: neg ? P.clay : P.ink };
-      if (!cap) return { ...base, capPercent: 0, capColor: P.clay, barOpacity: 0, capDisplay: key === 'misc' ? `${this.fmt(cfg.misc)}/mo, no cap` : (this.decorActive() ? `${this.fmt(cfg.decor)}/mo, ends after Nov 2026` : 'Ended, that money now goes to the cascade') };
+      if (!cap) return { ...base, capPercent: 0, capColor: P.clay, barOpacity: 0, capDisplay: key === 'fam' ? `${this.fmt(cfg.family)} per Litch check, for Remitly` : key === 'holiday' ? `${this.fmt(Component.HOLIDAY.amount)} for gifts, closes Jan 1` : 'No cap' };
       return { ...base, capPercent: Math.max(0, Math.min(100, bal / cap * 100)), capColor: neg ? P.clay : P.sage, barOpacity: 1, capDisplay: neg ? `${this.fmt(-bal)} over the ${this.fmt(cap)} cap` : `${this.fmt(bal)} left of ${this.fmt(cap)}` };
     };
-    const envelopes = [mk('Groceries', 'groceries'), mk('Gas', 'gas'), mk('Grooming', 'grooming'), mk('Life Fund', 'lifeF'), mk('Misc', 'misc'), mk('Home/Decor', 'homeDecor')];
+    const envelopes = Component.ENV_KEYS.map(k => mk(Component.ENV_NAMES[k], k));
 
     // quick log chips
-    const envChips = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ label: Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.clay : 'white', color: P.ink, onClick: () => this.setState({ logEnvelope: k }) }));
+    const envChips = Component.ENV_KEYS.map(k => ({ label: Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.clay : 'white', color: P.ink, onClick: () => this.setState({ logEnvelope: k }) }));
     const cardChips = [['', 'Checking'], ['discover', 'Discover'], ['chase', 'Chase'], ['citi', 'Citi']].map(([k, l]) => ({ label: l, bg: s.logCard === k ? P.ink : 'transparent', color: s.logCard === k ? P.bg : P.ink, onClick: () => this.setState({ logCard: k }) }));
 
     // coming up: next bills + next paycheck, by date
@@ -1251,7 +1283,7 @@ class Component extends DCLogic {
     if (!check && pcNow.length) banners.push(pcNames[pcNow[0].kind] + ' lands today, start the check');
     const dueToday = bills.filter(b => b.day === d && b.name !== 'Rent' && !this.billPaid(b, today));
     if (dueToday.length) banners.push(dueToday.length + ' bill' + (dueToday.length === 1 ? '' : 's') + ' due today');
-    const overNames = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].filter(k => s.envelopeBalances[k] < -0.004).map(k => Component.ENV_NAMES[k]);
+    const overNames = Component.ENV_KEYS.filter(k => s.envelopeBalances[k] < -0.004).map(k => Component.ENV_NAMES[k]);
     if (overNames.length) banners.push(overNames.join(', ') + ' overdrawn. The next refill is the cap minus the overage');
     const bannerText = banners.join(' · ');
 
@@ -1259,14 +1291,14 @@ class Component extends DCLogic {
       { name: 'Checking', sub: 'Ally joint, real balance', balance: this.fmt(checking), color: P.ink, onSet: () => this.setBalance('checking', null, 'Checking', checking) },
       { name: 'Float', sub: 'Label inside checking', balance: this.fmt(floatReserved), color: P.ink, onSet: () => this.setBalance('float', null, 'Float', floatReserved) },
       { name: 'Rent-holding', sub: `Ally joint savings, earning interest, pays ${this.fmt((bills.find(b => b.name === 'Rent') || { amount: 2950 }).amount)} on the 1st`, balance: this.fmt(s.rentHolding), color: P.ink, onSet: () => this.setBalance('rent', null, 'Rent-holding', s.rentHolding) },
-      ...[['ef', 'Emergency Fund'], ['car', 'Car Fund'], ['family', 'Family (Ghana)'], ['vacation', 'Vacation'], ['pet', 'Pet Fund'], ['house', 'House'], ['wedding', 'Wedding']].map(([k, n]) => ({ name: n, sub: 'Ally joint savings' + (this.pendTo(core, 'saving', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'saving', k))} in transit` : ''), balance: this.fmt(savings[k]), color: P.ink, onSet: () => this.setBalance('saving', k, n, savings[k]) })),
+      ...[['ef', 'Emergency Fund'], ['car', 'Car Fund'], ['vacation', 'Vacation'], ['house', 'House'], ['wedding', 'Wedding']].map(([k, n]) => ({ name: n, sub: 'Ally joint savings' + (this.pendTo(core, 'saving', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'saving', k))} in transit` : ''), balance: this.fmt(savings[k]), color: P.ink, onSet: () => this.setBalance('saving', k, n, savings[k]) })),
       ...Component.CARD_KEYS.map(k => ({ name: Component.CARD_NAMES[k], sub: 'Credit card, balance owed' + (this.pendTo(core, 'card', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'card', k))} paying` : ''), balance: this.fmt(cards[k]), color: cards[k] > 0.004 ? P.clay : P.ink, showPay: cards[k] > 0.004, onPay: () => this.payCard(k), onSet: () => this.setBalance('card', k, Component.CARD_NAMES[k], cards[k]) })),
       { name: 'Car repayment left', sub: 'Owed back to Car Fund', balance: this.fmt(carRepaymentLeft), color: P.ink, onSet: () => this.setBalance('carLeft', null, 'Car repayment left', carRepaymentLeft) },
-      ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ name: Component.ENV_NAMES[k] + ' envelope', sub: 'Label inside checking', balance: this.fmt(eb[k]), color: eb[k] < 0 ? P.clay : P.ink, onSet: () => this.setBalance('env', k, Component.ENV_NAMES[k], eb[k]) })),
+      ...Component.ENV_KEYS.map(k => ({ name: Component.ENV_NAMES[k] + ' envelope', sub: 'Label inside checking', balance: this.fmt(eb[k]), color: eb[k] < 0 ? P.clay : P.ink, onSet: () => this.setBalance('env', k, Component.ENV_NAMES[k], eb[k]) })),
     ];
     const billsThisMonth = [...bills].map(b => { const paid = this.billPaid(b, today); return { name: b.name, day: b.day, daySuffix: this.suffix(b.day) + (this.bm(b).dayEnd ? '–' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : ''), amount: (this.bm(b).variable ? '~' : '') + this.fmt(b.amount), opacity: paid ? 0.5 : 1, status: paid ? 'Paid' : 'Due', note: this.bm(b).variable && !b.next ? 'Varies with usage, enter the real amount when paid' : this.bm(b).dayEnd && !b.next ? 'Posts any day, ' + b.day + this.suffix(b.day) + ' to ' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : b.next ? `${this.fmt(b.next.amount)} from ${new Date(b.next.from + '-01T12:00:00').toLocaleDateString('en-US', { month: 'short' })}` : '', pillBg: paid ? P.mint : P.clayBg, pillFg: paid ? P.mintFg : P.clayFg, onToggle: () => this.toggleBill(b.name) }; }).sort((a, b) => a.day - b.day);
     const billEditRows = bills.map((b, i) => ({ annual: !!b.annual, annualLabel: b.annual ? 'Once a year' : 'Every month', month: typeof b.month === 'number' ? b.month : 0, onAnnual: () => this.setBillAnnual(i), onMonth: e => this.setBillMonth(i, e.target.value), name: b.name, day: b.day, amount: b.amount, onName: e => this.setBill(i, 'name', e.target.value), onDay: e => this.setBill(i, 'day', e.target.value), onAmount: e => this.setBill(i, 'amount', e.target.value), onDelete: () => this.delBill(i) }));
-    const cfgDefs = [['groceries', 'Groceries cap', 'Funded on the 15th'], ['gas', 'Gas cap', 'Funded on the 15th'], ['grooming', 'Grooming cap', 'Funded on the 15th'], ['lifeF', 'Life Fund cap', 'Funded at month end'], ['misc', 'Misc per month', 'Uncapped, month end'], ['decor', 'Home/Decor per month', 'Ends after Nov 2026'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family Support per check', 'Litch #1 and #2'], ['pet', 'Pet Fund', 'Litch #1 only'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['floatCap', 'Float kept in checking', 'Cap. Everything above goes to the Emergency Fund. 0 means no cap'], ['floatTarget', 'Monthly bills base', 'Sets the Emergency Fund goal. 0 follows your bills'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
+    const cfgDefs = [['groceries', 'Groceries cap', 'Funded at month end'], ['gas', 'Car cap', 'Funded on the 15th'], ['lifeF', 'Life cap per Liv check', 'Refilled on the 15th and at month end'], ['health', 'Health & Pet cap', 'Funded at month end'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family envelope per check', 'Litch #1 and #2, stays in checking'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['floatCap', 'Float kept in checking', 'Cap. Everything above goes to the Emergency Fund. 0 means no cap'], ['floatTarget', 'Monthly bills base', 'Sets the Emergency Fund goal. 0 follows your bills'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
     const cfgRows = cfgDefs.map(([k, l, sub]) => ({ label: l, sub, value: cfg[k], onInput: e => this.setCfg(k, e.target.value) }));
 
     const pendingRows = s.pending.map(p => ({ label: p.label, amount: this.fmt(p.amount), sub: 'Lands ' + this.dateLabel(new Date(p.lands + 'T00:00:00')), onLand: () => this.landOne(p.id) }));
@@ -1276,7 +1308,7 @@ class Component extends DCLogic {
     // insights
     const alerts = [];
     const RED = { bg: P.clayBg, fg: P.clayFg }, PAPER = { bg: P.paper, fg: P.ink }, BLUE = { bg: P.mint, fg: P.mintFg };
-    [['Groceries', 'groceries'], ['Grooming', 'grooming']].forEach(([n, k]) => {
+    [['Groceries', 'groceries'], ['Life', 'lifeF'], ['Health & Pet', 'health']].forEach(([n, k]) => {
       if (eb[k] < 0) alerts.push({ ...RED, title: `${n} is ${this.fmt(-eb[k])} overspent`, message: `This is your own envelope running below zero, not a bank fee. It is already spent, so it comes off the next refill instead of leaving checking again. Next refill is ${this.fmt(caps[k] + eb[k])} (cap minus overage).` });
     });
     if (safeToMove < -0.5) alerts.push({ ...RED, title: `Safe to Move is ${this.fmt(safeToMove)}`, message: 'Checking is short before the next check. The next check closes this gap before anything reaches the cascade.' });
@@ -1298,15 +1330,15 @@ class Component extends DCLogic {
       const when = `${this.dateLabel(p.date)} · ${days === 0 ? 'today' : days === 1 ? 'tomorrow' : 'in ' + days + ' days'}`;
       if (p.kind.indexOf('litch') === 0) {
         const n = this.litchCheckNum(p.date);
-        return { name: `Litch, check #${n} of month`, amount: '~$2,100', date: when, allocation: n === 1 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, Pet ${this.fmt(cfg.pet)}, rest to cascade` : n === 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, rest to cascade` : 'No fixed jobs. All of it goes to the cascade.' };
+        return { name: `Litch, check #${n} of month`, amount: '~$2,175', date: when, allocation: n <= 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family envelope ${this.fmt(cfg.family)}, rest to cascade` : n === 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, rest to cascade` : 'No fixed jobs. All of it goes to the cascade.' };
       }
-      if (p.kind === 'liv15') return { name: 'Liv, 15th', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 16th to month-end bills (${this.fmt(this.reserveWindow('liv15'))}), Groceries, Gas, Grooming to cap, rest to cascade` };
-      return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Life Fund to cap, Misc ${this.fmt(cfg.misc)}, ${this.decorActive() ? 'Decor ' + this.fmt(cfg.decor) + ', ' : ''}Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
+      if (p.kind === 'liv15') return { name: 'Liv, 15th', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 16th to month-end bills (${this.fmt(this.reserveWindow('liv15'))}), Car and Life to cap, rest to cascade` };
+      return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Groceries, Health & Pet and Life to cap, Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
     });
 
     const income = 2 * 2175 + 2 * 2720.17;
     const decor = this.decorActive() ? cfg.decor : 0;
-    const out = 2 * cfg.rent + 2 * cfg.family + cfg.pet + 2 * cfg.fun + this.monthlyBills(false) + cfg.groceries + cfg.gas + cfg.grooming + cfg.lifeF + cfg.misc + decor + cfg.vacation + (carRepaymentLeft > 0 ? cfg.carRepay : 0);
+    const out = 2 * cfg.rent + 2 * cfg.family + 2 * cfg.fun + this.monthlyBills(false) + cfg.groceries + cfg.gas + 2 * cfg.lifeF + cfg.health + decor + cfg.vacation + (carRepaymentLeft > 0 ? cfg.carRepay : 0);
     const surplus = Math.max(1, income - out);
     const surplusNote = `About ${this.fmt(income)} in − ${this.fmt(out)} out = ${this.fmt(income - out)} a month reaches the cascade${decor ? ` (${this.fmt(income - out + decor)} once Home/Decor ends)` : ''}.`;
     const gaps = [['Credit card payoff', owed, 'Cleared first, before Float gets anything'], ['Float', Math.max(0, floatT - floatReserved), 'Capped in checking, the rest builds the Emergency Fund'], ['Emergency Fund, 3 mo', Math.max(0, ef1 - this.effSav(core, 'ef')), `Unlocks Car Fund and ${this.fmt(cfg.ef2)}/mo stage 2`], ['Car Fund', Math.max(0, cfg.carTarget - this.effSav(core, 'car')), 'Starts once EF stage 1 is full']];
@@ -1317,13 +1349,13 @@ class Component extends DCLogic {
       return { goal, remaining: this.fmt(gap), note: `${gap < 0.005 ? 'Funded' : 'Done around ' + eta} · ${note}` };
     });
 
-    const groupA = { groceries: 1, gas: 1, grooming: 1 };
-    const paceNames = { groceries: 'Groceries', gas: 'Gas', grooming: 'Grooming', lifeF: 'Life Fund' };
-    const paceItems = ['groceries', 'gas', 'grooming', 'lifeF'].map(k => {
+    const groupA = { gas: 1 }, half = { lifeF: 1 };
+    const paceNames = Component.ENV_NAMES;
+    const paceItems = ['groceries', 'gas', 'lifeF', 'health'].map(k => {
       const cap = caps[k], spent = cap - eb[k];
-      const elapsed = groupA[k] ? Math.max(0.05, Math.min(1, (d - 15) / (dim - 15))) : Math.max(0.05, d / dim);
+      const elapsed = groupA[k] ? Math.max(0.05, Math.min(1, (d - 15) / (dim - 15))) : half[k] ? Math.max(0.05, Math.min(1, d <= 15 ? d / 15 : (d - 15) / (dim - 15))) : Math.max(0.05, d / dim);
       const hot = (spent / cap) / elapsed > 1.15;
-      return { name: paceNames[k], pace: `${Math.round(spent / cap * 100)}% used`, color: hot ? P.clay : P.ink, note: `${this.fmt(spent)} of ${this.fmt(cap)} spent with ${Math.round(elapsed * 100)}% of the ${groupA[k] ? '15th to month-end' : 'month'} gone${hot ? ', running hot' : ''}` };
+      return { name: paceNames[k], pace: `${Math.round(spent / cap * 100)}% used`, color: hot ? P.clay : P.ink, note: `${this.fmt(spent)} of ${this.fmt(cap)} spent with ${Math.round(elapsed * 100)}% of the ${groupA[k] ? '15th to month-end' : half[k] ? 'half month' : 'month'} gone${hot ? ', running hot' : ''}` };
     });
 
         const logAmountNum = parseFloat(s.logAmount);
@@ -1347,8 +1379,8 @@ class Component extends DCLogic {
     const heroZeroNote = dueList.length ? `${this.fmt(billsDue)} in bills left through ${nextEnd}, all covered. Next: ${nb.name.replace(/ \(annual\)/, '')} on the ${nb.day}${['th','st','nd','rd'][(nb.day % 100 > 10 && nb.day % 100 < 14) ? 0 : (nb.day % 10 < 4 ? nb.day % 10 : 0)]}.` : `No bills left through ${nextEnd}. Everything is covered.`;
     const heroZ = Math.abs(safeToMove) < 0.5, heroNumber = this.fmt(rv >= 1 || safeToMove <= 0 ? safeToMove : safeToMove * ease(Math.min(1, rv / 0.65))), heroColor = safeToMove < 0 ? P.clay : P.ink;
     const heroSub = safeToMove < 0 ? `Short by ${this.fmt(-safeToMove)}. The next check closes this first.` : `${this.fmt(checking)} in checking, ${this.fmt(claimsTotal)} already spoken for`;
-    const ringCap = k => caps[k] || (k === 'misc' ? cfg.misc : cfg.decor) || 1;
-    const rings = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => { const bal = eb[k], p = Math.max(0, Math.min(100, bal / ringCap(k) * 100)); return { name: Component.ENV_NAMES[k], short: fmt0(bal), dash: (shape(p) / 100 * 226.19).toFixed(2), dashOpacity: shape(p) > 0.5 ? 1 : 0, scale: s.pulse === k ? 1.1 : 1, color: bal < 0 ? P.clay : (p < 20 ? '#D8A657' : P.sage), balColor: bal < 0 ? P.clay : P.ink, onClick: () => this.setState({ logOpen: true, logIn: false, logEnvelope: k }) }; });
+    const ringCap = k => caps[k] || (k === 'fam' ? 2 * cfg.family : k === 'holiday' ? Component.HOLIDAY.amount : 0) || 1;
+    const rings = Component.ENV_KEYS.map(k => { const bal = eb[k], p = Math.max(0, Math.min(100, bal / ringCap(k) * 100)); return { name: Component.ENV_NAMES[k], short: fmt0(bal), dash: (shape(p) / 100 * 226.19).toFixed(2), dashOpacity: shape(p) > 0.5 ? 1 : 0, scale: s.pulse === k ? 1.1 : 1, color: bal < 0 ? P.clay : (p < 20 ? '#D8A657' : P.sage), balColor: bal < 0 ? P.clay : P.ink, onClick: () => this.setState({ logOpen: true, logIn: false, logEnvelope: k }) }; });
     const topTabs = [['pool', 'Pool'], ['month', 'Month'], ['flow', 'Flow'], ['books', 'Books']].map(([k, l]) => ({ label: l, color: activeTab === k ? P.ink : P.faint, line: activeTab === k ? P.sage : 'transparent', onClick: () => { this.setState({ activeTab: k }); window.scrollTo(0, 0); } }));
     const booksTabs = [['ledger', 'Ledger'], ['accounts', 'Accounts'], ['insights', 'Insights']].map(([k, l]) => ({ label: l, bg: s.booksTab === k ? P.card : 'transparent', weight: s.booksTab === k ? '600' : '500', onClick: () => this.setState({ booksTab: k }) }));
     // month
@@ -1377,9 +1409,9 @@ class Component extends DCLogic {
     // log sheet
     const amountDisplay = '$' + (s.logAmount ? (s.logAmount.split('.')[0] === '' ? '0' : Number(s.logAmount.split('.')[0]).toLocaleString('en-US')) + (s.logAmount.indexOf('.') >= 0 ? '.' + s.logAmount.split('.')[1] : '') : '0');
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map(k => ({ label: k, onClick: () => this.pressKey(k) }));
-    const logEnvChips = [...(s.logIn ? ['none'] : []), 'groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ label: k === 'none' ? 'Surplus' : Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.ink : 'transparent', color: s.logEnvelope === k ? P.bg : P.ink, border: s.logEnvelope === k ? P.ink : P.line2, onClick: () => this.setState({ logEnvelope: k }) }));
+    const logEnvChips = [...(s.logIn ? ['none'] : []), ...Component.ENV_KEYS].map(k => ({ label: k === 'none' ? 'Surplus' : Component.ENV_NAMES[k], bg: s.logEnvelope === k ? P.ink : 'transparent', color: s.logEnvelope === k ? P.bg : P.ink, border: s.logEnvelope === k ? P.ink : P.line2, onClick: () => this.setState({ logEnvelope: k }) }));
     const logCardChips = [['', 'Checking'], ['discover', 'Discover'], ['chase', 'Chase'], ['citi', 'Citi']].map(([k, l]) => ({ label: l, color: s.logCard === k ? P.ink : P.faint, line: s.logCard === k ? P.sage : 'transparent', onClick: () => this.setState({ logCard: k }) }));
-    const logButtonLabel = logAmountNum > 0 ? (s.logIn ? 'Add ' + this.fmt(logAmountNum) + (s.logEnvelope && s.logEnvelope !== 'none' ? ' back to ' + Component.ENV_NAMES[s.logEnvelope] : ' to surplus') : 'Log ' + this.fmt(logAmountNum) + ' to ' + Component.ENV_NAMES[s.logEnvelope || 'misc']) : 'Enter an amount';
+    const logButtonLabel = logAmountNum > 0 ? (s.logIn ? 'Add ' + this.fmt(logAmountNum) + (s.logEnvelope && s.logEnvelope !== 'none' ? ' back to ' + Component.ENV_NAMES[s.logEnvelope] : ' to surplus') : 'Log ' + this.fmt(logAmountNum) + ' to ' + Component.ENV_NAMES[s.logEnvelope || 'lifeF']) : 'Enter an amount';
     const setMode = v => () => this.setState({ logIn: v, logEnvelope: v ? 'none' : 'groceries', logCard: '' });
     const modeBtn = (on) => ({ bg: on ? P.ink : 'transparent', color: on ? P.bg : P.ink });
     const spB = modeBtn(!s.logIn), inB = modeBtn(!!s.logIn);
@@ -1395,12 +1427,12 @@ class Component extends DCLogic {
     const mh = (s.history || []).filter(h => inMonth(h.t) && h.meta);
     const spentBy = {}; let refundsIn = 0;
     mh.forEach(h => { if (h.meta.type === 'spend') spentBy[h.meta.env] = (spentBy[h.meta.env] || 0) + (-h.amt); else if (h.meta.type === 'refund') refundsIn += h.amt; });
-    const capOf = { groceries: s.cfg.groceries, gas: s.cfg.gas, grooming: s.cfg.grooming, lifeF: s.cfg.lifeF };
-    const monthRows = ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].filter(k => spentBy[k]).map(k => ({ label: Component.ENV_NAMES[k], amount: this.fmt(spentBy[k]), sub: capOf[k] ? 'of ' + this.fmt(capOf[k]) + ' cap' : 'no cap', over: capOf[k] && spentBy[k] > capOf[k] }));
+    const capOf = { groceries: s.cfg.groceries, gas: s.cfg.gas, lifeF: s.cfg.lifeF, health: s.cfg.health };
+    const monthRows = Component.ENV_KEYS.filter(k => spentBy[k]).map(k => ({ label: Component.ENV_NAMES[k], amount: this.fmt(spentBy[k]), sub: capOf[k] ? 'of ' + this.fmt(capOf[k]) + ' cap' : 'no cap', over: capOf[k] && spentBy[k] > capOf[k] }));
     const monthSpent = Object.values(spentBy).reduce((a, b) => a + b, 0);
     const monthBillsPaid = s.bills.filter(b => b.name !== 'Rent' && !b.annual && this.billPaid(b, nowD)).length, monthBillsAll = s.bills.filter(b => b.name !== 'Rent' && !b.annual).length;
     const monthHas = monthRows.length > 0 || refundsIn > 0;
-    const rcDefs = [['checking', 'Checking (Ally joint)', checking], ['rent', 'Rent-holding', s.rentHolding], ...['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].map(k => ['sav:' + k, { ef: 'Emergency Fund', car: 'Car Fund', family: 'Family (Ghana)', vacation: 'Vacation', pet: 'Pet Fund', house: 'House', wedding: 'Wedding' }[k], savings[k] || 0]), ...Component.CARD_KEYS.map(k => ['card:' + k, Component.CARD_NAMES[k] + ' (owed)', cards[k]])];
+    const rcDefs = [['checking', 'Checking (Ally joint)', checking], ['rent', 'Rent-holding', s.rentHolding], ...['ef', 'car', 'vacation', 'house', 'wedding'].map(k => ['sav:' + k, { ef: 'Emergency Fund', car: 'Car Fund', vacation: 'Vacation', house: 'House', wedding: 'Wedding' }[k], savings[k] || 0]), ...Component.CARD_KEYS.map(k => ['card:' + k, Component.CARD_NAMES[k] + ' (owed)', cards[k]])];
     const reconRows = rcDefs.map(([k, name, app]) => { const raw = (s.recon || {})[k], v = parseFloat(raw), has = raw !== undefined && raw !== '' && !isNaN(v), diff = has ? this.r2(v - app) : 0; return { name, app: this.fmt(app), value: raw === undefined ? '' : raw, diffText: has ? (Math.abs(diff) < 0.005 ? ' · matches' : ' · ' + (diff > 0 ? '+' : '-') + this.fmt(Math.abs(diff)).replace('-', '')) : '', color: has && Math.abs(diff) >= 0.005 ? P.clay : P.sage, onInput: e => this.setState({ recon: { ...(this.state.recon || {}), [k]: e.target.value } }) }; });
     const reconCount = reconRows.filter(r => r.value !== '' && !isNaN(parseFloat(r.value))).length;
     const sec = {
@@ -1422,16 +1454,16 @@ class Component extends DCLogic {
       hasFlash: !!s.flash, flash: s.flash, monthRows, monthHas, noMonth: !monthHas, monthSpent: this.fmt(monthSpent), refundsIn: this.fmt(refundsIn), hasRefunds: refundsIn > 0, billsPaidNote: monthBillsPaid + ' of ' + monthBillsAll + ' monthly bills paid so far',
       breakOpen: s.breakOpen, openBreak: () => this.setState({ breakOpen: true }), closeBreak: () => this.setState({ breakOpen: false }), breakRows,
       assignOpen: !!s.assign, assignAmt: s.assign ? this.fmt(s.assign.amount) : '', closeAssign: () => this.setState({ assign: null }), skipAssign: () => this.finishRecon(null),
-      assignChips: [{ label: "Don't know: spread by budget", bg: P.ink, fg: P.bg, onClick: () => this.finishRecon('byBudget') }, ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ label: Component.ENV_NAMES[k], bg: 'var(--card)', fg: P.ink, onClick: () => this.finishRecon(k) })), { label: 'Split 4 ways', bg: 'var(--card)', fg: P.ink, onClick: () => this.finishRecon('split4') }],
+      assignChips: [{ label: "Don't know: spread by budget", bg: P.ink, fg: P.bg, onClick: () => this.finishRecon('byBudget') }, ...Component.ENV_KEYS.map(k => ({ label: Component.ENV_NAMES[k], bg: 'var(--card)', fg: P.ink, onClick: () => this.finishRecon(k) })), { label: 'Split 4 ways', bg: 'var(--card)', fg: P.ink, onClick: () => this.finishRecon('split4') }],
       cpCards: [['discover', 'Discover'], ['chase', 'Chase'], ['citi', 'Citi']].map(([k, l]) => ({ label: l, bg: (s.cpCard || 'discover') === k ? P.ink : 'transparent', fg: (s.cpCard || 'discover') === k ? P.bg : P.ink, onClick: () => this.setState({ cpCard: k }) })),
-      cpEnvChips: ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => { const on = (s.cpEnvs || []).includes(k); return { label: Component.ENV_NAMES[k], bg: on ? P.ink : 'transparent', fg: on ? P.bg : P.ink, onClick: () => this.setState(st => ({ cpEnvs: (st.cpEnvs || []).includes(k) ? st.cpEnvs.filter(x => x !== k) : [...(st.cpEnvs || []), k] })) }; }),
+      cpEnvChips: Component.ENV_KEYS.map(k => { const on = (s.cpEnvs || []).includes(k); return { label: Component.ENV_NAMES[k], bg: on ? P.ink : 'transparent', fg: on ? P.bg : P.ink, onClick: () => this.setState(st => ({ cpEnvs: (st.cpEnvs || []).includes(k) ? st.cpEnvs.filter(x => x !== k) : [...(st.cpEnvs || []), k] })) }; }),
       cpAmt: s.cpAmt, cpFloat: s.cpFloat, setCpAmt: e => this.setState({ cpAmt: e.target.value }), setCpFloat: e => this.setState({ cpFloat: e.target.value }), cpReady: parseFloat(s.cpAmt) > 0 ? 1 : 0.4,
       cpNote: (() => { const amt = parseFloat(s.cpAmt) || 0, card = s.cpCard || 'discover', ap = Math.min(amt, s.cards[card]), out = amt - ap, fl = Math.min(parseFloat(s.cpFloat) || 0, out), ep = out - fl; return amt > 0 ? `Checking drops ${this.fmt(amt)}. Card balance in the app drops ${this.fmt(ap)}. Envelopes drop ${this.fmt(Math.max(0, ep))}. Float drops ${this.fmt(Math.max(0, fl))}.` : 'Enter the amount you are paying.'; })(),
       owedRows: (s.owedBack || []).map(o => ({ label: o.label, env: Component.ENV_NAMES[o.env] || (o.env === 'float' ? 'Float' : 'Free to pour'), amount: this.fmt(o.amount), onPaid: () => this.owedPaid(o.id), onRemove: () => this.owedRemove(o.id) })),
       mvFree: this.fmt(Math.max(this.computeSafe(s, today).safe, 0)), mvAmt: s.mvAmt || '', setMvAmt: e => this.setState({ mvAmt: e.target.value }), doMove: this.doMove,
-      mvChips: [['float', 'Float'], ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ['env:' + k, Component.ENV_NAMES[k]]), ...Object.keys(Component.SAV_NAMES).map(k => ['sav:' + k, Component.SAV_NAMES[k]])].map(([k, l]) => ({ label: l, bg: s.mvTo === k ? P.ink : 'transparent', fg: s.mvTo === k ? P.bg : P.ink, onClick: () => this.setState({ mvTo: k }) })),
+      mvChips: [['float', 'Float'], ...Component.ENV_KEYS.map(k => ['env:' + k, Component.ENV_NAMES[k]]), ...Object.keys(Component.SAV_NAMES).map(k => ['sav:' + k, Component.SAV_NAMES[k]])].map(([k, l]) => ({ label: l, bg: s.mvTo === k ? P.ink : 'transparent', fg: s.mvTo === k ? P.bg : P.ink, onClick: () => this.setState({ mvTo: k }) })),
       obLabel: s.obLabel, obAmt: s.obAmt, setObLabel: e => this.setState({ obLabel: e.target.value }), setObAmt: e => this.setState({ obAmt: e.target.value }), addOwed: this.addOwed,
-      obEnvChips: ['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor', 'float', 'free'].map(k => ({ label: Component.ENV_NAMES[k] || (k === 'float' ? 'Float' : 'Free to pour'), bg: (s.obEnv || 'misc') === k ? P.ink : 'transparent', fg: (s.obEnv || 'misc') === k ? P.bg : P.ink, onClick: () => this.setState({ obEnv: k }) })),
+      obEnvChips: [...Component.ENV_KEYS, 'float', 'free'].map(k => ({ label: Component.ENV_NAMES[k] || (k === 'float' ? 'Float' : 'Free to pour'), bg: (s.obEnv || 'lifeF') === k ? P.ink : 'transparent', fg: (s.obEnv || 'lifeF') === k ? P.bg : P.ink, onClick: () => this.setState({ obEnv: k }) })),
       breakNote: 'An overdrawn envelope counts as $0 held. That spend already left checking, so it is not subtracted twice.',
       holdRows, hasHolds: holdRows.length > 0, holdLabel: s.holdLabel, holdAmt: s.holdAmt, setHoldLabel: e => this.setState({ holdLabel: e.target.value }), setHoldAmt: e => this.setState({ holdAmt: e.target.value }), addHold: this.addHold,
       hasUndo: s.undoStack.length > 0,
@@ -1476,7 +1508,7 @@ class Component extends DCLogic {
       ['checking', 'floatReserved', 'cardCharges', 'rentHolding', 'carRepaymentLeft'].forEach(k => { if (typeof d[k] === 'number') p[k] = d[k]; });
       if (typeof d.rentPaidMonth === 'string') p.rentPaidMonth = d.rentPaidMonth;
       if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
-      if (d.envelopeBalances) p.envelopeBalances = { ...this.state.envelopeBalances, ...d.envelopeBalances };
+      if (d.envelopeBalances) p.envelopeBalances = this.migrateEnv(d.envelopeBalances);
       if (d.savings) p.savings = { house: 0, wedding: 0, ...d.savings };
       if (d.cards) p.cards = { amex: 0, chase: 0, citi: 0, ...d.cards };
       if (d.cfg) p.cfg = { ...this.state.cfg, ...d.cfg };
@@ -1502,7 +1534,7 @@ class Component extends DCLogic {
   doPaste = () => {
     const s = this.state, E = Component.ENV_NAMES; let inbox = [...s.inbox], skipped = 0, direct = 0, queued = 0;
     const used = {}, cutoff = Date.now() - 14 * 864e5, eb = { ...s.envelopeBalances }, newHist = []; let chk = s.checking;
-    const MAP = [['groceries', 'groceries'], ['gas', 'gas'], ['grooming', 'grooming'], ['life fund', 'lifeF'], ['life', 'lifeF'], ['misc', 'misc'], ['home/decor', 'homeDecor'], ['home decor', 'homeDecor'], ['decor', 'homeDecor'], ['home', 'homeDecor'], ['extra', 'extra']];
+    const MAP = [['groceries', 'groceries'], ['gas', 'gas'], ['car', 'gas'], ['grooming', 'lifeF'], ['life fund', 'lifeF'], ['life', 'lifeF'], ['misc', 'lifeF'], ['home/decor', 'lifeF'], ['home decor', 'lifeF'], ['decor', 'lifeF'], ['home', 'lifeF'], ['health', 'health'], ['medical', 'health'], ['pet', 'health'], ['family', 'fam'], ['remitly', 'fam'], ['extra', 'extra']];
     s.paste.split('\n').map(x => x.trim()).filter(Boolean).forEach(raw => {
       let ln = raw, envKey = null; const em = raw.match(/^(.*?)\s*>\s*([A-Za-z\/ ]+)$/);
       if (em) { const f = MAP.find(m => m[0] === em[2].trim().toLowerCase()); if (f) { envKey = f[1]; ln = em[1]; } }
@@ -1530,11 +1562,11 @@ class Component extends DCLogic {
     this.commit({ checking: this.r2(s.checking + it.amount), inbox: s.inbox.filter(x => x.id !== id) }, it.label + ' · Extra', it.amount, { type: 'refund' });
     this.say('Kept ' + this.fmt(it.amount) + ' as extra free money.');
   };
-  owedToFloat = (id) => { const s = this.state; this.save({ owedBack: (s.owedBack || []).map(o => o.id === id ? { ...o, env: o.env === 'float' ? (o.envWas || 'homeDecor') : 'float', envWas: o.env === 'float' ? undefined : o.env } : o) }); };
+  owedToFloat = (id) => { const s = this.state; this.save({ owedBack: (s.owedBack || []).map(o => o.id === id ? { ...o, env: o.env === 'float' ? (o.envWas || 'lifeF') : 'float', envWas: o.env === 'float' ? undefined : o.env } : o) }); };
   doMoveGo = () => { this.doMove(); setTimeout(() => { if (!this.state.mvAmt) this.setState({ sheet: null }); }, 60); };
 
   renderVals() {
-    const v = this.renderVals0(), s = this.state, P = this.pal(s.dark), E = Component.ENV_NAMES, EK = Object.keys(E), SV = Component.SAV_NAMES;
+    const v = this.renderVals0(), s = this.state, P = this.pal(s.dark), E = Component.ENV_NAMES, EK = Component.ENV_KEYS, SV = Component.SAV_NAMES;
     const today = new Date(), d = today.getDate(), dim = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const cs = this.computeSafe(s, today), safe = cs.safe, lv = s.who === 'liv';
     const tabN = { pool: 'home', month: 'plan', flow: 'plan', books: 'money' }[s.activeTab] || s.activeTab || 'home';
@@ -1637,7 +1669,7 @@ class Component extends DCLogic {
     out.flashUndo = /^(Logged|Added \$|Sorted|Moved|Paid|Matched|Landed)/.test(s.flash || '') && s.undoStack.length > 0;
     return { ...v, ...out };
   }
-  guessEnv(t) { t = (t || '').toLowerCase(); if (/target|whole|kroger|publix|aldi|trader|food|market/.test(t)) return 'groceries'; if (/shell|exxon|bp|chevron|gas|wawa|fuel/.test(t)) return 'gas'; if (/cvs|walgreens|salon|sephora|nail|beauty/.test(t)) return 'grooming'; if (/ikea|home|decor|wayfair|quince/.test(t)) return 'homeDecor'; return 'misc'; }
+  guessEnv(t) { t = (t || '').toLowerCase(); if (/target|whole|kroger|publix|aldi|trader|food|market/.test(t)) return 'groceries'; if (/shell|exxon|bp|chevron|gas|wawa|fuel/.test(t)) return 'gas'; if (/remitly/.test(t)) return 'fam'; if (/cvs|walgreens|pharmacy|tryon|medical|doctor|vet|petsmart|petco|chewy|litter/.test(t)) return 'health'; if (/mavis|autozone|parking|circle ?k|qt |7-eleven/.test(t)) return 'gas'; return 'lifeF'; }
 
 }
 
