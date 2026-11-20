@@ -547,7 +547,7 @@ class Component extends DCLogic {
           ['checking', 'floatReserved', 'cardCharges', 'rentHolding', 'carRepaymentLeft'].forEach(k => { if (typeof d[k] === 'number') p[k] = d[k]; });
           if (typeof d.rentPaidMonth === 'string') p.rentPaidMonth = d.rentPaidMonth;
           if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
-          if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = this.migrateEnv(d.envelopeBalances);
+          if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = this.migrateEnv(d.envelopeBalances, false); this._rawEnv = d.bucketsV2 ? null : { ...d.envelopeBalances };
           if (d.bucketsV2) p.bucketsV2 = true;
           if (typeof d.holidayFunded === 'number') p.holidayFunded = d.holidayFunded;
           if (d.savings && typeof d.savings.ef === 'number') p.savings = { house: 0, wedding: 0, ...d.savings };
@@ -1021,29 +1021,29 @@ class Component extends DCLogic {
       if (!window.confirm('Replace the numbers on both phones with the backup from ' + when + '? Checking will read ' + this.fmt(c.checking) + '. Download a backup first if you are not sure.')) return;
       const core = {}; Component.PERSIST.forEach(k => { if (k in c) core[k] = c[k]; });
       core.cards = { discover: 0, amex: 0, chase: 0, citi: 0, ...(core.cards || {}) };
-      core.savings = { house: 0, wedding: 0, ...core.savings }; core.envelopeBalances = this.migrateEnv(core.envelopeBalances);
+      core.savings = { house: 0, wedding: 0, ...core.savings }; core.envelopeBalances = this.migrateEnv(core.envelopeBalances, !c.bucketsV2); this._rawEnv = c.bucketsV2 ? null : { ...c.envelopeBalances }; core.bucketsV2 = !!c.bucketsV2;
       const old = Array.isArray(d.history) ? d.history.filter(x => x && typeof x.id === 'string' && typeof x.t === 'string' && typeof x.label === 'string' && typeof x.amt === 'number') : this.state.history;
       const history = [{ id: this.uid(), t: new Date().toISOString(), label: 'Restored from backup file (' + when + ')', amt: 0, meta: null }, ...old].slice(0, 150);
       this.setState({ ...core, history, undoStack: [{ core: this.core(), history: this.state.history }, ...this.state.undoStack].slice(0, 12) });
       this.persist({ ...core, history });
-      this.say('Restored. Both phones now show these numbers.');
+      this.say('Restored. Both phones now show these numbers.'); setTimeout(() => this.migrateV2(), 0);
     };
     rd.readAsText(f);
   };
-  migrateEnv(eb) {
+  migrateEnv(eb, fold) {
     const e = { groceries: 0, gas: 0, lifeF: 0, health: 0, fam: 0, holiday: 0, ...(eb || {}) };
-    ['grooming', 'misc', 'homeDecor'].forEach(k => { if (typeof e[k] === 'number') e.lifeF = this.r2(e.lifeF + e[k]); delete e[k]; });
+    ['grooming', 'misc', 'homeDecor'].forEach(k => { if (fold && typeof e[k] === 'number') e.lifeF = this.r2(e.lifeF + e[k]); delete e[k]; });
     if (e.extra === null || e.extra === undefined) delete e.extra;
     return e;
   }
   migrateV2() {
     const s = this.state; if (s.bucketsV2) return;
-    const c = this.copyCore(this.core()), eb = this.migrateEnv(c.envelopeBalances), sv = { ...c.savings };
+    const c = this.copyCore(this.core()), eb = this.migrateEnv(this._rawEnv || c.envelopeBalances, true), sv = { ...c.savings };
     let toChk = 0;
     const moveIn = (savKey, envKey) => {
       const inTransit = c.pending.filter(p => p.destType === 'saving' && p.destKey === savKey).reduce((a, p) => a + p.amount, 0);
       const amt = this.r2((sv[savKey] || 0) + inTransit);
-      eb[envKey] = this.r2(eb[envKey] + amt); toChk = this.r2(toChk + (sv[savKey] || 0)); delete sv[savKey];
+      eb[envKey] = this.r2(eb[envKey] + amt); toChk = this.r2(toChk + (sv[savKey] || 0)); sv[savKey] = 0;
       c.checking = this.r2(c.checking + inTransit);
       c.pending = c.pending.filter(p => !(p.destType === 'saving' && p.destKey === savKey));
       return amt;
@@ -1051,14 +1051,16 @@ class Component extends DCLogic {
     const pet = moveIn('pet', 'health'), fam = moveIn('family', 'fam');
     const cfg = { ...c.cfg, groceries: 650, gas: 150, lifeF: 600, health: 150, family: 150 };
     ['grooming', 'misc', 'decor', 'pet'].forEach(k => delete cfg[k]);
-    this.commit({ envelopeBalances: eb, savings: sv, pending: c.pending, checking: this.r2(c.checking + toChk), cfg, bucketsV2: true },
+    this.commit({ envelopeBalances: { ...eb, grooming: null, misc: null, homeDecor: null }, savings: sv, pending: c.pending, checking: this.r2(c.checking + toChk), cfg, bucketsV2: true },
       'New buckets: Pet Fund ' + this.fmt(pet) + ' to Health & Pet, Family ' + this.fmt(fam) + ' to the Family envelope, Grooming, Misc and Home/Decor into Life', 0);
   }
   restoreSnap(key) {
     const snap = (this.state.snapshots || {})[key]; if (!snap) return;
     if (this.state.confirmKey !== key) { this.setState({ confirmKey: key }); clearTimeout(this._confT); this._confT = setTimeout(() => this.setState({ confirmKey: '' }), 4000); return; }
     this.setState({ confirmKey: '' });
-    this.commit({ ...snap.core, envelopeBalances: this.migrateEnv(snap.core.envelopeBalances) }, 'Restored snapshot from ' + key, 0);
+    this._rawEnv = snap.core.bucketsV2 ? null : { ...snap.core.envelopeBalances };
+    this.commit({ ...snap.core, envelopeBalances: this.migrateEnv(snap.core.envelopeBalances, false), bucketsV2: !!snap.core.bucketsV2 }, 'Restored snapshot from ' + key, 0);
+    setTimeout(() => this.migrateV2(), 0);
   }
   startRev = () => { clearInterval(this._cnt); const t0 = Date.now(); this._cnt = setInterval(() => { const p = Math.min(1, (Date.now() - t0) / 1900); this.setState({ rev: p }); if (p >= 1) clearInterval(this._cnt); }, 33); };
   beginOut = () => {
@@ -1508,7 +1510,7 @@ class Component extends DCLogic {
       ['checking', 'floatReserved', 'cardCharges', 'rentHolding', 'carRepaymentLeft'].forEach(k => { if (typeof d[k] === 'number') p[k] = d[k]; });
       if (typeof d.rentPaidMonth === 'string') p.rentPaidMonth = d.rentPaidMonth;
       if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
-      if (d.envelopeBalances) p.envelopeBalances = this.migrateEnv(d.envelopeBalances);
+      if (d.envelopeBalances) p.envelopeBalances = this.migrateEnv(d.envelopeBalances, !d.bucketsV2);
       if (d.savings) p.savings = { house: 0, wedding: 0, ...d.savings };
       if (d.cards) p.cards = { amex: 0, chase: 0, citi: 0, ...d.cards };
       if (d.cfg) p.cfg = { ...this.state.cfg, ...d.cfg };
