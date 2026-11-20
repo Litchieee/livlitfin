@@ -150,7 +150,7 @@ input:focus, select:focus { border-color:#4F7D61 !important; }
         <sc-if value="{{ sec.owedb.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><div style="font-size:14px;line-height:1.5;color:var(--muted);margin-bottom:6px">Money someone owes the house. It does not change any balance until it is paid back, then it returns to the envelope you chose.</div><sc-for list="{{ owedRows }}" as="ob" hint-placeholder-count="1"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);gap:10px"><div style="min-width:0;flex:1"><div style="font-size:15px;font-weight:500">{{ ob.label }}</div><div style="font-size:13px;color:var(--muted)">Back to {{ ob.env }}</div></div><span style="font-size:15px;font-variant-numeric:tabular-nums">{{ ob.amount }}</span><button onClick="{{ ob.onPaid }}" style="border:1px solid var(--line2);border-radius:calc(10px*var(--rs,1));background:var(--card);font-family:inherit;font-weight:600;cursor:pointer;color:var(--ink);padding:8px 12px;font-size:13px">Paid back</button><button onClick="{{ ob.onRemove }}" style="border:none;background:none;font-family:inherit;color:var(--muted);cursor:pointer;font-size:18px;padding:0 2px">×</button></div></sc-for><div style="display:flex;gap:8px;margin-top:10px"><input type="text" placeholder="Who / what" value="{{ obLabel }}" onInput="{{ setObLabel }}" onChange="{{ setObLabel }}" style="flex:1.4;min-width:0;border:1px solid var(--line2);border-radius:calc(10px*var(--rs,1));background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px" /><input type="number" inputmode="decimal" placeholder="Amount" value="{{ obAmt }}" onInput="{{ setObAmt }}" onChange="{{ setObAmt }}" style="flex:1;min-width:0;border:1px solid var(--line2);border-radius:calc(10px*var(--rs,1));background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px" /></div><div style="font-size:13px;color:var(--muted);margin:10px 0 6px">Returns to</div><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ obEnvChips }}" as="oe" hint-placeholder-count="4"><button onClick="{{ oe.onClick }}" style="border:1px solid var(--line2);border-radius:calc(20px*var(--rs,1));background:{{ oe.bg }};color:{{ oe.fg }};font-family:inherit;font-size:13px;font-weight:500;padding:7px 12px;cursor:pointer">{{ oe.label }}</button></sc-for></div><button onClick="{{ addOwed }}" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:calc(14px*var(--rs,1));background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;" style-active="transform:scale(0.98)">Add</button></div></sc-if>
         <button onClick="{{ sec.recon.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Match to bank</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.recon.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.recon.chev }}</span></span></button><sc-if value="{{ sec.recon.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><div style="font-size:14px;line-height:1.5;color:var(--muted);margin-bottom:6px">Type what your bank shows for any account. The difference (interest, a missed spend) is shown before you apply anything.</div><sc-for list="{{ reconRows }}" as="rc" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:500">{{ rc.name }}</div><div style="font-size:13px;color:var(--muted)">App says {{ rc.app }}<span style="color:{{ rc.color }};font-weight:600">{{ rc.diffText }}</span></div></div><input type="number" inputmode="decimal" placeholder="Bank" value="{{ rc.value }}" onInput="{{ rc.onInput }}" onChange="{{ rc.onInput }}" style="width:112px;text-align:right;border:1px solid var(--line2);border-radius:calc(10px*var(--rs));background:var(--card);font-family:inherit;font-size:15px;color:var(--ink);padding:10px;flex:none;font-variant-numeric:tabular-nums" /></div></sc-for><button onClick="{{ applyRecon }}" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:calc(14px*var(--rs));background:var(--sage);color:var(--onSage);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;opacity:{{ reconReady }}" style-active="transform:scale(0.98)">{{ reconLabel }}</button></div></sc-if>
         <button onClick="{{ sec.backup.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:baseline;border:none;background:none;padding:16px 0;border-top:1px solid var(--line);font-family:inherit;cursor:pointer;color:var(--ink);text-align:left"><span style="font-size:17px;font-weight:600">Backup and sync</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sec.backup.sum }}<span style="display:inline-block;width:22px;text-align:right;font-size:18px">{{ sec.backup.chev }}</span></span></button>
-        <sc-if value="{{ sec.backup.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><button onClick="{{ exportBackup }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:calc(14px*var(--rs));background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Download a backup file</button><button onClick="{{ exportCalendar }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:calc(14px*var(--rs));background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Add paydays and bills to Calendar</button><div style="font-size:14px;color:var(--muted);margin-bottom:4px">Daily snapshots, last 7 days</div><sc-for list="{{ snapRows }}" as="sn" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line);gap:8px"><div><div style="font-size:15px;font-weight:500">{{ sn.label }}</div><div style="font-size:13px;color:var(--muted)">{{ sn.sub }}</div></div><button onClick="{{ sn.onRestore }}" style="padding:8px 13px;border:1px solid var(--line2);border-radius:calc(10px*var(--rs));background:{{ sn.btnBg }};color:{{ sn.btnFg }};font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">{{ sn.btn }}</button></div></sc-for><sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ doSignOut }}" style="margin-top:12px;border:none;background:none;padding:0;font-family:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer">Sign out</button></sc-if></div></sc-if>
+        <sc-if value="{{ sec.backup.open }}" hint-placeholder-val="{{ false }}"><div style="padding-bottom:16px"><button onClick="{{ exportBackup }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:calc(14px*var(--rs));background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Download a backup file</button><button onClick="{{ pickRestore }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:calc(14px*var(--rs));background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Restore from a backup file</button><input id="lv-restore-file" type="file" accept=".json,application/json" onChange="{{ restoreFile }}" style="display:none"><button onClick="{{ exportCalendar }}" style="width:100%;padding:14px;border:1px solid var(--line2);border-radius:calc(14px*var(--rs));background:var(--card);font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);margin-bottom:14px" style-active="transform:scale(0.98)">Add paydays and bills to Calendar</button><div style="font-size:14px;color:var(--muted);margin-bottom:4px">Daily snapshots, last 7 days</div><sc-for list="{{ snapRows }}" as="sn" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line);gap:8px"><div><div style="font-size:15px;font-weight:500">{{ sn.label }}</div><div style="font-size:13px;color:var(--muted)">{{ sn.sub }}</div></div><button onClick="{{ sn.onRestore }}" style="padding:8px 13px;border:1px solid var(--line2);border-radius:calc(10px*var(--rs));background:{{ sn.btnBg }};color:{{ sn.btnFg }};font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">{{ sn.btn }}</button></div></sc-for><sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ doSignOut }}" style="margin-top:12px;border:none;background:none;padding:0;font-family:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer">Sign out</button></sc-if></div></sc-if>
       </div>
     
       </div></sc-if>
@@ -163,7 +163,7 @@ input:focus, select:focus { border-color:#4F7D61 !important; }
         <div style="font-family:'Newsreader',Georgia,serif;font-size:40px;letter-spacing:-0.025em;line-height:1.1;margin:2px 0">{{ rwLow }}</div>
         <div style="font-size:14px;color:var(--muted);line-height:1.45;margin-bottom:10px">{{ rwText }}</div>
         <svg viewBox="0 0 320 120" width="100%" height="110" style="display:block;overflow:visible"><path d="{{ rwArea }}" style="fill:var(--line)"></path><line x1="0" x2="320" y1="{{ rwClaimY }}" y2="{{ rwClaimY }}" style="stroke:var(--muted);stroke-width:1;stroke-dasharray:4 3"></line><path d="{{ rwLine }}" style="fill:none;stroke:var(--sage);stroke-width:2"></path></svg>
-        <div style="font-size:12px;color:var(--muted);margin:6px 0 16px">Dashed line: {{ rwClaim }} held for Float, envelopes and cards</div>
+        <div style="font-size:12px;color:var(--muted);margin:6px 0 16px">Dashed line: {{ rwClaim }} held for Float and envelopes</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:2px">Tap a bill when it leaves Ally. Rent comes from Rent-holding.</div>
         <sc-for list="{{ billRows }}" as="b" hint-placeholder-count="10"><button onClick="{{ b.onClick }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;border:none;border-top:1px solid var(--line);background:none;color:var(--ink);padding:10px 0;min-height:56px;cursor:pointer;text-align:left;font-family:inherit;font-size:16px"><span>{{ b.label }}<span style="display:block;font-size:13px;color:var(--muted)">{{ b.date }}</span></span><span style="display:flex;align-items:center;gap:12px"><span style="font-variant-numeric:tabular-nums;font-weight:600">{{ b.amt }}</span><span style="font-size:13px;font-weight:700;min-width:38px;text-align:right;color:{{ b.col }}">{{ b.status }}</span></span></button></sc-for>
       </div></sc-if>
@@ -483,7 +483,7 @@ class Component extends DCLogic {
     floatReserved: 633.63,
     envelopeBalances: { groceries: -103.00, gas: 0.00, grooming: -105.00, lifeF: 100.00, misc: 100.55, homeDecor: 11.05 },
     savings: { ef: 2303.32, car: 2121.71, family: 150.00, vacation: 223.57, pet: 110.42, house: 0, wedding: 0 },
-    cards: { discover: 299.00, chase: 0, citi: 0 },
+    cards: { discover: 299.00, amex: 0, chase: 0, citi: 0 },
     cardCharges: 0,
     rentHolding: 0,
     rentPaidMonth: '2026-09',
@@ -520,7 +520,9 @@ class Component extends DCLogic {
   };
 
   static ENV_NAMES = { groceries: 'Groceries', gas: 'Gas', grooming: 'Grooming', lifeF: 'Life Fund', misc: 'Misc', homeDecor: 'Home/Decor' };
-  static CARD_NAMES = { discover: 'Discover', chase: 'Chase', citi: 'Citi' };
+  static CARD_NAMES = { discover: 'Discover', amex: 'Liv American card', chase: 'Chase', citi: 'Citi' };
+  static CARD_KEYS = ['discover', 'amex', 'chase', 'citi'];
+  static CARD_DUE = { discover: 16, amex: 27 };
   static PERSIST = ['inbox', 'learn', 'fun', 'checking', 'floatReserved', 'envelopeBalances', 'savings', 'cards', 'cardCharges', 'rentHolding', 'rentPaidMonth', 'carRepaymentLeft', 'efStage', 'pending', 'check', 'cfg', 'bills', 'billFlags', 'holds'];
 
   componentDidMount() {
@@ -543,8 +545,8 @@ class Component extends DCLogic {
           if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
           if (d.envelopeBalances && typeof d.envelopeBalances.groceries === 'number') p.envelopeBalances = d.envelopeBalances;
           if (d.savings && typeof d.savings.ef === 'number') p.savings = { house: 0, wedding: 0, ...d.savings };
-          if (d.cards && typeof d.cards.discover === 'number') p.cards = { chase: 0, citi: 0, ...d.cards };
-          else if (d.savings && typeof d.savings.discover === 'number') p.cards = { discover: d.savings.discover, chase: 0, citi: 0 };
+          if (d.cards && typeof d.cards.discover === 'number') p.cards = { amex: 0, chase: 0, citi: 0, ...d.cards };
+          else if (d.savings && typeof d.savings.discover === 'number') p.cards = { discover: d.savings.discover, amex: 0, chase: 0, citi: 0 };
           if (p.savings) delete p.savings.discover;
           if (Array.isArray(d.pending)) p.pending = d.pending.filter(x => x && typeof x.amount === 'number' && typeof x.destType === 'string' && typeof x.destKey === 'string' && typeof x.lands === 'string');
           if (Array.isArray(d.history)) p.history = d.history.filter(x => x && typeof x.id === 'string' && typeof x.t === 'string' && typeof x.label === 'string' && typeof x.amt === 'number');
@@ -686,7 +688,7 @@ class Component extends DCLogic {
   pendTo(c, type, key) { return c.pending.filter(p => p.destType === type && p.destKey === key).reduce((a, p) => a + p.amount, 0); }
   effCard(c, k) { return Math.max(0, this.r2(c.cards[k] - this.pendTo(c, 'card', k))); }
   effSav(c, k) { return this.r2((c.savings[k] || 0) + this.pendTo(c, 'saving', k)); }
-  cardsOwed(c) { return ['discover', 'chase', 'citi'].reduce((a, k) => a + this.effCard(c, k), 0); }
+  cardsOwed(c) { return Component.CARD_KEYS.reduce((a, k) => a + this.effCard(c, k), 0); }
   activeTier(c) {
     const g = c.cfg;
     if (this.cardsOwed(c) > 0.004) return 'cards';
@@ -746,7 +748,7 @@ class Component extends DCLogic {
     const held = Object.keys(s.envelopeBalances).reduce((a, k) => a + Math.max(s.envelopeBalances[k], 0), 0);
     const holds = (s.holds || []).reduce((a, h) => a + h.amount, 0);
     const cardsOwed = this.cardsOwed(s);
-    return { safe: this.r2(s.checking - s.floatReserved - billsDue - held - holds - cardsOwed), billsDue, held, holds, cardsOwed };
+    return { safe: this.r2(s.checking - s.floatReserved - billsDue - held - holds), billsDue, held, holds, cardsOwed };
   }
 
   // ---------- engine ----------
@@ -782,7 +784,11 @@ class Component extends DCLogic {
         if (s.efStage === 2) add({ key: 'ef2', label: 'Emergency Fund stage 2', type: 'transfer', want: g.ef2, dest: 'ef' });
       }
     }
-    const rsv = jobs.filter(j => j.key === 'reserve').reduce((a, j) => a + j.amount, 0);
+    const rsvJob = jobs.filter(j => j.key === 'reserve').reduce((a, j) => a + j.amount, 0), now = new Date();
+    // Only add back reserve money for bills that Safe to spend already subtracted, so nothing is counted twice or freed twice.
+    const inRsv = b => kind === 'liv15' ? b.day >= 16 : (b.day <= 15 && now.getDate() <= 15);
+    const counted = this.billsBeforeNextCheck(now).filter(inRsv).reduce((a, b) => a + b.amount, 0);
+    const rsv = this.r2(Math.min(rsvJob, counted));
     const pre = this.r2(this.computeSafe(s, new Date()).safe + rsv), gap = Math.max(0, -pre), carry = Math.max(0, pre);
     if (gap > 0.004) add({ key: 'gap', label: 'Hold to close Safe-to-Move gap', type: 'info', want: gap, note: 'Stays in checking before anything reaches the cascade' });
     jobs.push({ key: 'sweep', carry, label: '', type: 'sweep', amount: 0, want: 0, short: false, status: 'todo', skippable: false, dest: null, envKey: null, note: '' });
@@ -806,7 +812,7 @@ class Component extends DCLogic {
   distribute(c, rem) {
     const g = c.cfg;
     let r = rem, budget = r + c.cardCharges, paid = 0;
-    ['discover', 'chase', 'citi'].forEach(k => {
+    Component.CARD_KEYS.forEach(k => {
       const a = this.r2(Math.min(this.effCard(c, k), budget));
       if (a > 0.004) { this.send(c, 'Payment to ' + Component.CARD_NAMES[k], a, 'card', k); budget = this.r2(budget - a); paid += a; }
     });
@@ -830,7 +836,7 @@ class Component extends DCLogic {
   startCheck = () => {
     if (this.state.check) return;
     const kind = this.state.postKind || this.nextKind(new Date());
-    const amount = parseFloat(this.state.postAmount) || (kind.indexOf('litch') === 0 ? 2100 : 2720.17);
+    const amount = parseFloat(this.state.postAmount) || (kind.indexOf('litch') === 0 ? 2175 : 2720.17);
     const names = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv, 15th', livEnd: 'Liv, month end' };
     this.commit({ checking: this.r2(this.state.checking + amount), check: { kind, amount, name: names[kind], jobs: this.jobsFor(kind, amount) } }, names[kind] + ' arrived', amount);
     this.setState({ postAmount: '' });
@@ -996,6 +1002,27 @@ class Component extends DCLogic {
     a.download = 'livlit-backup-' + this.iso(new Date()) + '.json';
     document.body.appendChild(a); a.click(); a.remove();
   };
+  pickRestore = () => { const el = document.getElementById('lv-restore-file'); if (el) { el.value = ''; el.click(); } };
+  restoreFile = (e) => {
+    const f = e && e.target && e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let d = null; try { d = JSON.parse(rd.result); } catch (x) {}
+      const c = d && d.core;
+      if (!c || typeof c.checking !== 'number' || !c.savings || !c.envelopeBalances || !Array.isArray(c.bills)) { this.say('That file is not a LivLit backup.'); return; }
+      const when = d.exported ? new Date(d.exported).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'an unknown date';
+      if (!window.confirm('Replace the numbers on both phones with the backup from ' + when + '? Checking will read ' + this.fmt(c.checking) + '. Download a backup first if you are not sure.')) return;
+      const core = {}; Component.PERSIST.forEach(k => { if (k in c) core[k] = c[k]; });
+      core.cards = { discover: 0, amex: 0, chase: 0, citi: 0, ...(core.cards || {}) };
+      core.savings = { house: 0, wedding: 0, ...core.savings };
+      const old = Array.isArray(d.history) ? d.history.filter(x => x && typeof x.id === 'string' && typeof x.t === 'string' && typeof x.label === 'string' && typeof x.amt === 'number') : this.state.history;
+      const history = [{ id: this.uid(), t: new Date().toISOString(), label: 'Restored from backup file (' + when + ')', amt: 0, meta: null }, ...old].slice(0, 150);
+      this.setState({ ...core, history, undoStack: [{ core: this.core(), history: this.state.history }, ...this.state.undoStack].slice(0, 12) });
+      this.persist({ ...core, history });
+      this.say('Restored. Both phones now show these numbers.');
+    };
+    rd.readAsText(f);
+  };
   restoreSnap(key) {
     const snap = (this.state.snapshots || {})[key]; if (!snap) return;
     if (this.state.confirmKey !== key) { this.setState({ confirmKey: key }); clearTimeout(this._confT); this._confT = setTimeout(() => this.setState({ confirmKey: '' }), 4000); return; }
@@ -1020,7 +1047,7 @@ class Component extends DCLogic {
     const c = num('checking'); if (c !== null) { delta += c - s.checking; next.checking = c; n++; if (Math.abs(c - s.checking) > 0.004) ch.push(['Checking', c - s.checking]); }
     const r = num('rent'); if (r !== null) { delta += r - s.rentHolding; next.rentHolding = r; n++; if (Math.abs(r - s.rentHolding) > 0.004) ch.push(['Rent-holding', r - s.rentHolding]); }
     ['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].forEach(k => { const v = num('sav:' + k); if (v !== null) { delta += v - (s.savings[k] || 0); next.savings[k] = v; n++; if (Math.abs(v - (s.savings[k] || 0)) > 0.004) ch.push([Component.SAV_NAMES[k], v - (s.savings[k] || 0)]); } });
-    ['discover', 'chase', 'citi'].forEach(k => { const v = num('card:' + k); if (v !== null) { delta -= v - s.cards[k]; next.cards[k] = Math.max(0, v); n++; if (Math.abs(v - s.cards[k]) > 0.004) ch.push([Component.CARD_NAMES[k] + ' owed', v - s.cards[k]]); } });
+    Component.CARD_KEYS.forEach(k => { const v = num('card:' + k); if (v !== null) { delta -= v - s.cards[k]; next.cards[k] = Math.max(0, v); n++; if (Math.abs(v - s.cards[k]) > 0.004) ch.push([Component.CARD_NAMES[k] + ' owed', v - s.cards[k]]); } });
     if (!n) return;
     const dc = c !== null ? this.r2(s.checking - c) : 0;
     this._pend = { next, n, delta, ch };
@@ -1160,11 +1187,11 @@ class Component extends DCLogic {
     const totalBalance = checking + effSavTotal + s.rentHolding + this.pendTo(core, 'rent', 'rent') - owed;
     const { safe: safeToMove, billsDue, held, holds: holdsTotal, cardsOwed: cardsOwedAmt } = this.computeSafe(s, today);
     const nextEnd = d <= 15 ? 'the 15th' : 'month end';
-    const safeNote = `${this.fmt(checking)} checking − ${this.fmt(floatReserved)} float − ${this.fmt(billsDue)} bills by ${nextEnd} − ${this.fmt(held)} held in envelopes${cardsOwedAmt > 0.004 ? ` − ${this.fmt(cardsOwedAmt)} owed on cards` : ''}`;
+    const safeNote = `${this.fmt(checking)} checking − ${this.fmt(floatReserved)} float − ${this.fmt(billsDue)} bills by ${nextEnd} − ${this.fmt(held)} held in envelopes`;
     const floatT = this.floatT(), ef1 = this.ef1T(), efT = s.efStage === 1 ? ef1 : this.ef2T();
 
     const kindNow = s.postKind || this.nextKind(today);
-    const amtNow = parseFloat(s.postAmount) || (kindNow.indexOf('litch') === 0 ? 2100 : 2720.17);
+    const amtNow = parseFloat(s.postAmount) || (kindNow.indexOf('litch') === 0 ? 2175 : 2720.17);
     const tierLabels = { cards: 'credit cards', float: 'Float', ef: 'Emergency Fund', car: 'Car Fund', house: 'House', wedding: 'Wedding', done: 'nothing, all funded' };
     const activeKey = this.activeTier(core);
     const rowFor = (j, amount, jobs) => {
@@ -1180,7 +1207,7 @@ class Component extends DCLogic {
     const openSteps = check ? check.jobs.filter(j => j.status === 'todo').length : 0;
 
     const order = ['cards', 'float', 'ef', 'car', 'house', 'wedding'];
-    const cardList = ['discover', 'chase', 'citi'].filter(k => this.effCard(core, k) > 0.004).map(k => `${Component.CARD_NAMES[k]} ${this.fmt(this.effCard(core, k))}`).join(' · ');
+    const cardList = Component.CARD_KEYS.filter(k => this.effCard(core, k) > 0.004).map(k => `${Component.CARD_NAMES[k]} ${this.fmt(this.effCard(core, k))}`).join(' · ');
     const tiers = {
       cards: { label: 'Credit card payoff', pct: owed > 0.004 ? 0 : 1, cur: owed > 0.004 ? this.fmt(owed) + ' owed' : 'Paid off', tgt: cardList || 'All cards at $0' },
       float: { label: 'Float in checking', pct: floatReserved / floatT, cur: this.fmt(floatReserved), tgt: 'of ' + this.fmt(floatT) },
@@ -1213,7 +1240,7 @@ class Component extends DCLogic {
     });
     const npc = this.paychecksFrom(today, 2)[0];
     const pcNames = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv, 15th', livEnd: 'Liv, month end' };
-    ups.push({ date: npc.date, label: pcNames[npc.kind], amount: '+' + this.fmt(npc.kind.indexOf('litch') === 0 ? 2100 : 2720.17).slice(0), tone: P.clay });
+    ups.push({ date: npc.date, label: pcNames[npc.kind], amount: '+' + this.fmt(npc.kind.indexOf('litch') === 0 ? 2175 : 2720.17).slice(0), tone: P.clay });
     ups.sort((a, b) => a.date - b.date);
     const comingUp = ups.slice(0, 5).map(u => ({ when: this.shortDate(u.date), label: u.label, amount: u.amount, tone: u.tone }));
 
@@ -1233,7 +1260,7 @@ class Component extends DCLogic {
       { name: 'Float', sub: 'Label inside checking', balance: this.fmt(floatReserved), color: P.ink, onSet: () => this.setBalance('float', null, 'Float', floatReserved) },
       { name: 'Rent-holding', sub: `Ally joint savings, earning interest, pays ${this.fmt((bills.find(b => b.name === 'Rent') || { amount: 2950 }).amount)} on the 1st`, balance: this.fmt(s.rentHolding), color: P.ink, onSet: () => this.setBalance('rent', null, 'Rent-holding', s.rentHolding) },
       ...[['ef', 'Emergency Fund'], ['car', 'Car Fund'], ['family', 'Family (Ghana)'], ['vacation', 'Vacation'], ['pet', 'Pet Fund'], ['house', 'House'], ['wedding', 'Wedding']].map(([k, n]) => ({ name: n, sub: 'Ally joint savings' + (this.pendTo(core, 'saving', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'saving', k))} in transit` : ''), balance: this.fmt(savings[k]), color: P.ink, onSet: () => this.setBalance('saving', k, n, savings[k]) })),
-      ...['discover', 'chase', 'citi'].map(k => ({ name: Component.CARD_NAMES[k], sub: 'Credit card, balance owed' + (this.pendTo(core, 'card', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'card', k))} paying` : ''), balance: this.fmt(cards[k]), color: cards[k] > 0.004 ? P.clay : P.ink, showPay: cards[k] > 0.004, onPay: () => this.payCard(k), onSet: () => this.setBalance('card', k, Component.CARD_NAMES[k], cards[k]) })),
+      ...Component.CARD_KEYS.map(k => ({ name: Component.CARD_NAMES[k], sub: 'Credit card, balance owed' + (this.pendTo(core, 'card', k) > 0 ? ` · ${this.fmt(this.pendTo(core, 'card', k))} paying` : ''), balance: this.fmt(cards[k]), color: cards[k] > 0.004 ? P.clay : P.ink, showPay: cards[k] > 0.004, onPay: () => this.payCard(k), onSet: () => this.setBalance('card', k, Component.CARD_NAMES[k], cards[k]) })),
       { name: 'Car repayment left', sub: 'Owed back to Car Fund', balance: this.fmt(carRepaymentLeft), color: P.ink, onSet: () => this.setBalance('carLeft', null, 'Car repayment left', carRepaymentLeft) },
       ...['groceries', 'gas', 'grooming', 'lifeF', 'misc', 'homeDecor'].map(k => ({ name: Component.ENV_NAMES[k] + ' envelope', sub: 'Label inside checking', balance: this.fmt(eb[k]), color: eb[k] < 0 ? P.clay : P.ink, onSet: () => this.setBalance('env', k, Component.ENV_NAMES[k], eb[k]) })),
     ];
@@ -1277,7 +1304,7 @@ class Component extends DCLogic {
       return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Life Fund to cap, Misc ${this.fmt(cfg.misc)}, ${this.decorActive() ? 'Decor ' + this.fmt(cfg.decor) + ', ' : ''}Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
     });
 
-    const income = 2 * 2100 + 2 * 2720.17;
+    const income = 2 * 2175 + 2 * 2720.17;
     const decor = this.decorActive() ? cfg.decor : 0;
     const out = 2 * cfg.rent + 2 * cfg.family + cfg.pet + 2 * cfg.fun + this.monthlyBills(false) + cfg.groceries + cfg.gas + cfg.grooming + cfg.lifeF + cfg.misc + decor + cfg.vacation + (carRepaymentLeft > 0 ? cfg.carRepay : 0);
     const surplus = Math.max(1, income - out);
@@ -1309,7 +1336,6 @@ class Component extends DCLogic {
       { label: 'Bills by ' + nextEnd, value: billsDue, color: '#E39A2D' },
       { label: 'In envelopes', value: held, color: '#6FB391' },
       { label: 'Pending in Ally', value: holdsTotal, color: '#D4573A' },
-      { label: 'Owed on cards', value: cardsOwedAmt, color: '#8F6BB8' },
     ].filter(c => c.value > 0.004);
     const claimsTotal = claims.reduce((a, c) => a + c.value, 0);
     const freeAmt = Math.max(0, checking - claimsTotal);
@@ -1374,7 +1400,7 @@ class Component extends DCLogic {
     const monthSpent = Object.values(spentBy).reduce((a, b) => a + b, 0);
     const monthBillsPaid = s.bills.filter(b => b.name !== 'Rent' && !b.annual && this.billPaid(b, nowD)).length, monthBillsAll = s.bills.filter(b => b.name !== 'Rent' && !b.annual).length;
     const monthHas = monthRows.length > 0 || refundsIn > 0;
-    const rcDefs = [['checking', 'Checking (Ally joint)', checking], ['rent', 'Rent-holding', s.rentHolding], ...['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].map(k => ['sav:' + k, { ef: 'Emergency Fund', car: 'Car Fund', family: 'Family (Ghana)', vacation: 'Vacation', pet: 'Pet Fund', house: 'House', wedding: 'Wedding' }[k], savings[k] || 0]), ...['discover', 'chase', 'citi'].map(k => ['card:' + k, Component.CARD_NAMES[k] + ' (owed)', cards[k]])];
+    const rcDefs = [['checking', 'Checking (Ally joint)', checking], ['rent', 'Rent-holding', s.rentHolding], ...['ef', 'car', 'family', 'vacation', 'pet', 'house', 'wedding'].map(k => ['sav:' + k, { ef: 'Emergency Fund', car: 'Car Fund', family: 'Family (Ghana)', vacation: 'Vacation', pet: 'Pet Fund', house: 'House', wedding: 'Wedding' }[k], savings[k] || 0]), ...Component.CARD_KEYS.map(k => ['card:' + k, Component.CARD_NAMES[k] + ' (owed)', cards[k]])];
     const reconRows = rcDefs.map(([k, name, app]) => { const raw = (s.recon || {})[k], v = parseFloat(raw), has = raw !== undefined && raw !== '' && !isNaN(v), diff = has ? this.r2(v - app) : 0; return { name, app: this.fmt(app), value: raw === undefined ? '' : raw, diffText: has ? (Math.abs(diff) < 0.005 ? ' · matches' : ' · ' + (diff > 0 ? '+' : '-') + this.fmt(Math.abs(diff)).replace('-', '')) : '', color: has && Math.abs(diff) >= 0.005 ? P.clay : P.sage, onInput: e => this.setState({ recon: { ...(this.state.recon || {}), [k]: e.target.value } }) }; });
     const reconCount = reconRows.filter(r => r.value !== '' && !isNaN(parseFloat(r.value))).length;
     const sec = {
@@ -1413,7 +1439,7 @@ class Component extends DCLogic {
       splashOn: s.splash !== 'done', skipSplash: this.skipSplash, splashBg: s.splash === 'out' ? 0 : 1, flyX: s.flyX, flyY: s.flyY, flyS: s.flyS,
       arcAnim: `lvArc ${(s.splashShort ? 0.6 : 1.7).toFixed(2)}s cubic-bezier(.3,.05,.2,1.12) ${(s.splashShort ? 0.07 : 0.2).toFixed(2)}s both`, wordAnim: `lvRise ${(s.splashShort ? 0.3 : 0.7).toFixed(2)}s ease ${(s.splashShort ? 0.45 : 1.5).toFixed(2)}s both`, subAnim: `lvRise ${(s.splashShort ? 0.3 : 0.7).toFixed(2)}s ease ${(s.splashShort ? 0.65 : 1.95).toFixed(2)}s both`,
       syncLabel: { live: 'Saved', cached: 'Syncing', offline: 'Offline', signin: 'Sign in', connecting: 'Connecting' }[s.sync] || '', syncColor: s.sync === 'live' ? P.sage : (s.sync === 'connecting' ? P.gray : P.clay),
-      needSignIn: s.needSignIn, authEmail: s.authEmail, authPass: s.authPass, authError: s.authError, setAuthEmail: e => this.setState({ authEmail: e.target.value }), setAuthPass: e => this.setState({ authPass: e.target.value }), doSignIn: this.doSignIn, doSignOut: this.doSignOut, signedIn: s.signedIn, exportBackup: this.exportBackup,
+      needSignIn: s.needSignIn, authEmail: s.authEmail, authPass: s.authPass, authError: s.authError, setAuthEmail: e => this.setState({ authEmail: e.target.value }), setAuthPass: e => this.setState({ authPass: e.target.value }), doSignIn: this.doSignIn, doSignOut: this.doSignOut, signedIn: s.signedIn, exportBackup: this.exportBackup, pickRestore: this.pickRestore, restoreFile: this.restoreFile,
       snapRows: Object.keys(s.snapshots || {}).sort().reverse().map(k => { const sn = s.snapshots[k]; return { label: new Date(k + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), sub: 'Checking ' + this.fmt(sn.core.checking), btn: s.confirmKey === k ? 'Tap again to restore' : 'Restore', btnBg: s.confirmKey === k ? P.clay : P.card, btnFg: s.confirmKey === k ? P.onSage : P.ink, onRestore: () => this.restoreSnap(k) }; }),
       sec, reconRows, applyRecon: this.applyRecon, exportCalendar: this.exportCalendar, reconReady: reconCount ? 1 : 0.4, reconLabel: reconCount ? 'Apply ' + reconCount + ' difference' + (reconCount === 1 ? '' : 's') : 'Enter a bank balance above', acctChk, acctSav, acctCard, acctEnv, leadBg: lead.bg, leadFg: lead.fg, leadTitle: lead.title, leadMessage: lead.message, restAlerts, hasRest: restAlerts.length > 0,
       askOpen: !!s.ask, askTitle: s.ask ? s.ask.title : '', askValue: s.ask ? s.ask.value : '', setAsk: e => this.setState({ ask: { ...this.state.ask, value: e.target.value } }), saveAsk: this.saveAsk, closeAsk: () => this.setState({ ask: null }),
@@ -1452,7 +1478,7 @@ class Component extends DCLogic {
       if (d.efStage === 1 || d.efStage === 2) p.efStage = d.efStage;
       if (d.envelopeBalances) p.envelopeBalances = { ...this.state.envelopeBalances, ...d.envelopeBalances };
       if (d.savings) p.savings = { house: 0, wedding: 0, ...d.savings };
-      if (d.cards) p.cards = { chase: 0, citi: 0, ...d.cards };
+      if (d.cards) p.cards = { amex: 0, chase: 0, citi: 0, ...d.cards };
       if (d.cfg) p.cfg = { ...this.state.cfg, ...d.cfg };
       if (d.billFlags) p.billFlags = d.billFlags;
       ['pending', 'bills', 'owedBack', 'holds'].forEach(k => { if (Array.isArray(d[k])) p[k] = d[k]; });
@@ -1518,7 +1544,8 @@ class Component extends DCLogic {
     const fmt = n => this.fmt(n), fmt0 = n => (n < -0.5 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
     const pcNames = { litch1: 'Litch check #1', litch2: 'Litch check #2', litch3: 'Litch check #3', liv15: 'Liv, 15th', livEnd: 'Liv, month end' };
     const check = s.check, openSteps = check ? check.jobs.filter(j => j.status === 'todo').length : 0;
-    const pcNow = this.paychecksFrom(today, 1).filter(p => p.date.toDateString() === today.toDateString());
+    const ranRecently = kind => (s.history || []).some(h => h.label === pcNames[kind] + ' arrived' && (today - new Date(h.t)) < 6 * 86400000 && new Date(h.t) <= new Date(today.getTime() + 86400000));
+    const pcNow = this.paychecksFrom(today, 1).filter(p => p.date.toDateString() === today.toDateString() && !ranRecently(p.kind));
     const dueToday = s.bills.filter(b => b.day === d && b.name !== 'Rent' && !this.billPaid(b, today) && (b.month === undefined ? !b.annual : b.month === today.getMonth()));
     const sg = it => s.learn[this.mkey(it.label)] || this.guessEnv(it.label);
     const goTab = (tab, extra) => () => { this.setState({ activeTab: tab, ...(extra || {}) }); window.scrollTo(0, 0); };
@@ -1530,6 +1557,11 @@ class Component extends DCLogic {
     s.pending.forEach(p => q.push({ k: 'pend', p }));
     (s.owedBack || []).forEach(o => q.push({ k: 'owed', o }));
     dueToday.forEach(b => q.push({ k: 'bill', b }));
+    { const td = new Date(); td.setHours(0, 0, 0, 0);
+      Component.CARD_KEYS.forEach(k => { const dd = Component.CARD_DUE[k], bal = this.effCard(this.core(), k); if (!dd || bal <= 0.004) return;
+        let due = new Date(td.getFullYear(), td.getMonth(), dd); if (due < td) due = new Date(td.getFullYear(), td.getMonth() + 1, dd);
+        const days = Math.round((due - td) / 86400000); if (days <= 7) q.push({ k: 'carddue', card: k, bal, due, days }); }); }
+    Object.keys(s.envelopeBalances || {}).forEach(k => { const v = s.envelopeBalances[k]; if (typeof v === 'number' && v < -0.004 && Component.ENV_NAMES[k] && !(s.overAck || {})[k]) q.push({ k: 'over', env: k, v }); });
     if (safe > 0.5) q.push({ k: 'free' });
     if (q.length > 1) { const r0 = (s.qrot || 0) % q.length; q = q.slice(r0).concat(q.slice(0, r0)); }
     const later = q.length > 1 ? [{ label: 'Later', onClick: () => this.setState({ qrot: (s.qrot || 0) + 1, openSort: null }) }] : [];
@@ -1540,16 +1572,18 @@ class Component extends DCLogic {
     else if (cur && cur.k === 'pend') { const p = cur.p; c = { kick: 'Did it land?', title: p.label, amt: fmt(p.amount), sub: 'Expected ' + this.dateLabel(new Date(p.lands + 'T00:00:00')) + '. Comes off Safe to spend until then.', prim: 'Yes, it landed', go: () => this.landOne(p.id), alts: later }; }
     else if (cur && cur.k === 'owed') { const o = cur.o; c = { kick: 'Did it land?', title: o.label, amt: '+' + fmt(o.amount), sub: 'Goes to ' + (E[o.env] || (o.env === 'float' ? 'Float' : 'free money')), prim: 'Yes, it landed', go: () => this.owedPaid(o.id), alts: [{ label: o.env === 'float' ? 'Send to ' + (E[o.envWas] || 'its envelope') + ' instead' : 'Send to Float instead', onClick: () => this.owedToFloat(o.id) }, ...later] }; }
     else if (cur && cur.k === 'bill') { const b = cur.b; c = { kick: 'Due today', title: b.name.replace(' (annual)', ''), amt: fmt(b.amount), sub: 'Mark it paid once it leaves Ally.', prim: 'Mark paid', go: () => this.toggleBill(b.name), alts: later }; }
+    else if (cur && cur.k === 'carddue') { const k = cur.card; c = { kick: cur.days === 0 ? 'Card due today' : 'Card due in ' + cur.days + ' day' + (cur.days === 1 ? '' : 's'), title: Component.CARD_NAMES[k], amt: fmt(cur.bal), sub: 'Pay the full statement balance by ' + cur.due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' so it costs no interest. Leave 2 business days for the payment to post.', prim: 'Log a payment', go: () => this.payCard(k), alts: later }; }
+    else if (cur && cur.k === 'over') { const k = cur.env; c = { kick: 'Envelope overspent', title: Component.ENV_NAMES[k] + ' is over', amt: fmt(cur.v), sub: 'The next refill is cut by this much. Do not move money in from another bucket or free money to cover it.', prim: 'Got it', go: () => this.setState({ overAck: { ...(s.overAck || {}), [k]: true } }), alts: later }; }
     else if (cur) c = { kick: 'Give it a job', title: 'Free money', amt: fmt(safe), sub: 'Not assigned to Float, an envelope or savings. Move it, then make the same move in Ally.', prim: 'Move it', go: () => this.setState({ sheet: 'move', mvTo: 'float', mvAmt: String(Math.floor(safe * 100) / 100) }), alts: later };
-    const qRow = x => x.k === 'check' ? { title: check.name, kick: 'Payday check', amt: fmt(check.amount) } : x.k === 'pay' ? { title: pcNames[pcNow[0].kind], kick: 'Payday', amt: '' } : x.k === 'sort' ? { title: x.i.label, kick: 'Sort · ' + E[sg(x.i)], amt: fmt(x.i.sign * x.i.amount) } : x.k === 'pend' ? { title: x.p.label, kick: 'Did it land?', amt: fmt(x.p.amount) } : x.k === 'owed' ? { title: x.o.label, kick: 'Did it land?', amt: '+' + fmt(x.o.amount) } : x.k === 'bill' ? { title: x.b.name.replace(' (annual)', ''), kick: 'Due today', amt: fmt(x.b.amount) } : { title: 'Free money', kick: 'Give it a job', amt: fmt(safe) };
+    const qRow = x => x.k === 'check' ? { title: check.name, kick: 'Payday check', amt: fmt(check.amount) } : x.k === 'pay' ? { title: pcNames[pcNow[0].kind], kick: 'Payday', amt: '' } : x.k === 'sort' ? { title: x.i.label, kick: 'Sort · ' + E[sg(x.i)], amt: fmt(x.i.sign * x.i.amount) } : x.k === 'pend' ? { title: x.p.label, kick: 'Did it land?', amt: fmt(x.p.amount) } : x.k === 'owed' ? { title: x.o.label, kick: 'Did it land?', amt: '+' + fmt(x.o.amount) } : x.k === 'bill' ? { title: x.b.name.replace(' (annual)', ''), kick: 'Due today', amt: fmt(x.b.amount) } : x.k === 'carddue' ? { title: Component.CARD_NAMES[x.card], kick: x.days === 0 ? 'Card due today' : 'Card due in ' + x.days + ' day' + (x.days === 1 ? '' : 's'), amt: fmt(x.bal) } : x.k === 'over' ? { title: Component.ENV_NAMES[x.env] + ' is over', kick: 'Envelope overspent', amt: fmt(x.v) } : { title: 'Free money', kick: 'Give it a job', amt: fmt(safe) };
     // runway chart for the window
     const evs = s.bills.filter(b => b.name !== 'Rent' && !this.billPaid(b, today) && b.day <= endDay && (b.month === undefined ? !b.annual : b.month === today.getMonth())).map(b => ({ n: b.name, a: b.amount, day: Math.max(b.day, d) })).sort((x, y) => x.day - y.day);
-    const claim = this.r2(s.floatReserved + cs.held + cs.holds + cs.cardsOwed), span = Math.max(endDay - d, 1);
+    const claim = this.r2(s.floatReserved + cs.held + cs.holds), span = Math.max(endDay - d, 1);
     let run = s.checking; const pts = [{ x: 0, v: run }]; evs.forEach(e => { run = this.r2(run - e.a); pts.push({ x: (e.day - d) / span * 320, v: run }); });
     const low = run, top = Math.max(s.checking, claim) + 60, bot = Math.min(low, claim) - 60, yy = n => 6 + (top - n) / Math.max(top - bot, 1) * 108;
     let ln = 'M0,' + yy(pts[0].v).toFixed(1); pts.slice(1).forEach(p => { ln += ' H' + p.x.toFixed(1) + ' V' + yy(p.v).toFixed(1); }); ln += ' H320';
     const gap = this.r2(low - claim);
-    const rwText = gap >= 0 ? 'That is ' + fmt(gap) + ' above what is held for Float, envelopes and cards, so everything due through ' + nextEnd + ' is covered.' : 'That is ' + fmt(-gap) + ' under what is held. The next check closes it.';
+    const rwText = gap >= 0 ? 'That is ' + fmt(gap) + ' above what is held for Float and envelopes, so everything due through ' + nextEnd + ' is covered.' : 'That is ' + fmt(-gap) + ' under what is held. The next check closes it.';
     const ord = b => b.day + this.suffix(b.day);
     const monthBills = s.bills.filter(b => b.month === undefined ? !b.annual : b.month === today.getMonth()).slice().sort((a, b) => a.day - b.day);
     const billRows = monthBills.map(b => { const paid = this.billPaid(b, today); return { label: b.name.replace(' (annual)', ''), date: ord(b), amt: fmt(b.amount), status: paid ? 'Paid' : 'Due', col: paid ? P.muted : P.clay, onClick: () => this.toggleBill(b.name) }; });
@@ -1582,7 +1616,7 @@ class Component extends DCLogic {
       canMove: safe > 0.004, openMove: () => this.setState({ sheet: 'move', mvTo: 'float', mvAmt: String(Math.floor(Math.max(safe, 0) * 100) / 100) }),
       envRows: EK.map(k => { const b = s.envelopeBalances[k]; return { name: E[k], bal: fmt(b), balCol: b < -0.004 ? P.clay : P.ink, note: envNote(k), noteCol: b < -0.004 ? P.clay : P.muted, dot: dotOf(k), onClick: () => this.setState({ logOpen: true, logIn: false, logEnvelope: k }) }; }),
       savRows: Object.keys(SV).filter(k => k !== 'house' && k !== 'wedding' || this.effSav(this.core(), k) > 0).map(k => ({ name: SV[k], bal: fmt(this.effSav(this.core(), k)) })),
-      hasCards: cs.cardsOwed > 0.004, cardRows: ['discover', 'chase', 'citi'].filter(k => this.effCard(this.core(), k) > 0.004).map(k => ({ name: Component.CARD_NAMES[k], bal: fmt(this.effCard(this.core(), k)), onPay: () => this.payCard(k) })),
+      hasCards: cs.cardsOwed > 0.004, cardRows: Component.CARD_KEYS.filter(k => this.effCard(this.core(), k) > 0.004).map(k => ({ name: Component.CARD_NAMES[k], bal: fmt(this.effCard(this.core(), k)), onPay: () => this.payCard(k) })),
       planTabs: [['bills', 'Bills'], ['cal', 'Calendar'], ['pay', 'Payday'], ['ins', 'Insights']].map(([k, l]) => sub(planTab === k, l, () => this.setState({ planTab: k, activeTab: 'plan' }))),
       pBills: planTab === 'bills', showMonth: tabN === 'plan' && planTab === 'cal', showFlow: tabN === 'plan' && planTab === 'pay', showInsights: tabN === 'plan' && planTab === 'ins', showLedger: tabN === 'act',
       winEnd: nextEnd, rwLow: fmt(low), rwText, rwLine: ln, rwArea: ln + ' V' + yy(bot).toFixed(1) + ' H0 Z', rwClaimY: yy(claim).toFixed(1), rwClaim: fmt(claim), billRows,
