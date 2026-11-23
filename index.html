@@ -491,7 +491,7 @@ class Component extends DCLogic {
     efStage: 1,
     pending: [],
     check: null,
-    cfg: { groceries: 650, gas: 150, lifeF: 600, health: 150, fun: 800, vacation: 125, family: 150, rent: 1455.5, carRepay: 150, ef2: 300, carTarget: 25000, houseTarget: 35000, weddingTarget: 20000 },
+    cfg: { groceries: 650, gas: 150, lifeF: 600, health: 150, healthMax: 1000, fun: 800, vacation: 125, family: 150, rent: 1455.5, carRepay: 150, ef2: 300, carTarget: 25000, houseTarget: 35000, weddingTarget: 20000 },
     bills: [
       { name: 'Rent', day: 1, amount: 2950.00 },
       { name: 'Nuuly', day: 1, amount: 106.09 },
@@ -527,6 +527,7 @@ class Component extends DCLogic {
   static CARD_NAMES = { discover: 'Discover', amex: 'Liv American card', chase: 'Chase', citi: 'Citi' };
   static CARD_KEYS = ['discover', 'amex', 'chase', 'citi'];
   static CARD_DUE = { discover: 16, amex: 27 };
+  static CARD_PAYFULL = { discover: true };
   static PERSIST = ['inbox', 'learn', 'fun', 'checking', 'floatReserved', 'envelopeBalances', 'savings', 'cards', 'cardCharges', 'rentHolding', 'rentPaidMonth', 'carRepaymentLeft', 'efStage', 'pending', 'check', 'cfg', 'bills', 'billFlags', 'holds', 'bucketsV2', 'holidayFunded'];
 
   componentDidMount() {
@@ -643,7 +644,7 @@ class Component extends DCLogic {
   ef1T() { return this.r2(this.floatBase() * 3); }
   ef2T() { return this.r2(this.floatBase() * 6); }
   num(n) { return typeof n === 'number' && !isNaN(n) ? n : 0; }
-  caps() { const c = this.state.cfg; return { groceries: c.groceries, gas: c.gas, lifeF: c.lifeF, health: c.health }; }
+  caps() { const c = this.state.cfg; return { groceries: c.groceries, gas: c.gas, lifeF: c.lifeF, health: c.healthMax || 1000 }; }
 
   core() {
     const s = this.state, o = {};
@@ -781,7 +782,8 @@ class Component extends DCLogic {
       add({ key: 'reserve', label: kind === 'liv15' ? 'Reserve bills, 16th to month end' : 'Reserve bills, 1st to 15th', type: 'info', want: this.reserveWindow(kind), note: 'Stays in checking, held for bills' });
       if (kind === 'liv15') { refill('gas', 'Car to cap'); refill('lifeF', 'Life to cap, 15th to month end'); }
       else {
-        refill('groceries', 'Groceries to cap'); refill('health', 'Health & Pet to cap'); refill('lifeF', 'Life to cap, 1st to 15th');
+        refill('groceries', 'Groceries to cap'); refill('lifeF', 'Life to cap, 1st to 15th');
+        { const hb = s.envelopeBalances.health || 0, hmax = g.healthMax || 1000; add({ key: 'health', label: 'Health & Pet build-up', type: 'add', want: Math.max(0, this.r2(Math.min(g.health, hmax - hb))), envKey: 'health', skippable: true, note: 'Adds up to ' + this.fmt(g.health) + ' a month until it holds ' + this.fmt(hmax) }); }
         if (this.decorActive()) add({ key: 'decor', label: 'Home/Decor', type: 'add', want: g.decor, envKey: 'homeDecor', note: 'Ends after Nov 2026' });
         add({ key: 'vacation', label: 'Vacation', type: 'transfer', want: g.vacation, dest: 'vacation', skippable: true });
         if (s.carRepaymentLeft > 0) add({ key: 'carRepay', label: 'Car Fund repayment', type: 'carRepay', want: Math.min(g.carRepay, s.carRepaymentLeft), skippable: true, note: `${this.fmt(s.carRepaymentLeft)} left to repay` });
@@ -1257,6 +1259,7 @@ class Component extends DCLogic {
       const bal = eb[key], cap = caps[key], neg = bal < 0;
       const base = { name, balance: this.fmt(bal), balanceColor: neg ? P.clay : P.ink };
       if (!cap) return { ...base, capPercent: 0, capColor: P.clay, barOpacity: 0, capDisplay: key === 'fam' ? `${this.fmt(cfg.family)} per Litch check, for Remitly` : key === 'holiday' ? `${this.fmt(Component.HOLIDAY.amount)} for gifts, closes Jan 1` : 'No cap' };
+      if (key === 'health') return { ...base, capPercent: Math.max(0, Math.min(100, bal / cap * 100)), capColor: neg ? P.clay : P.sage, barOpacity: 1, capDisplay: neg ? `${this.fmt(-bal)} over, next month's ${this.fmt(cfg.health)} covers it first` : `${this.fmt(bal)} saved, builds to ${this.fmt(cap)}` };
       return { ...base, capPercent: Math.max(0, Math.min(100, bal / cap * 100)), capColor: neg ? P.clay : P.sage, barOpacity: 1, capDisplay: neg ? `${this.fmt(-bal)} over the ${this.fmt(cap)} cap` : `${this.fmt(bal)} left of ${this.fmt(cap)}` };
     };
     const envelopes = Component.ENV_KEYS.map(k => mk(Component.ENV_NAMES[k], k));
@@ -1300,7 +1303,7 @@ class Component extends DCLogic {
     ];
     const billsThisMonth = [...bills].map(b => { const paid = this.billPaid(b, today); return { name: b.name, day: b.day, daySuffix: this.suffix(b.day) + (this.bm(b).dayEnd ? '–' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : ''), amount: (this.bm(b).variable ? '~' : '') + this.fmt(b.amount), opacity: paid ? 0.5 : 1, status: paid ? 'Paid' : 'Due', note: this.bm(b).variable && !b.next ? 'Varies with usage, enter the real amount when paid' : this.bm(b).dayEnd && !b.next ? 'Posts any day, ' + b.day + this.suffix(b.day) + ' to ' + this.bm(b).dayEnd + this.suffix(this.bm(b).dayEnd) : b.next ? `${this.fmt(b.next.amount)} from ${new Date(b.next.from + '-01T12:00:00').toLocaleDateString('en-US', { month: 'short' })}` : '', pillBg: paid ? P.mint : P.clayBg, pillFg: paid ? P.mintFg : P.clayFg, onToggle: () => this.toggleBill(b.name) }; }).sort((a, b) => a.day - b.day);
     const billEditRows = bills.map((b, i) => ({ annual: !!b.annual, annualLabel: b.annual ? 'Once a year' : 'Every month', month: typeof b.month === 'number' ? b.month : 0, onAnnual: () => this.setBillAnnual(i), onMonth: e => this.setBillMonth(i, e.target.value), name: b.name, day: b.day, amount: b.amount, onName: e => this.setBill(i, 'name', e.target.value), onDay: e => this.setBill(i, 'day', e.target.value), onAmount: e => this.setBill(i, 'amount', e.target.value), onDelete: () => this.delBill(i) }));
-    const cfgDefs = [['groceries', 'Groceries cap', 'Funded at month end'], ['gas', 'Car cap', 'Funded on the 15th'], ['lifeF', 'Life cap per Liv check', 'Refilled on the 15th and at month end'], ['health', 'Health & Pet cap', 'Funded at month end'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family envelope per check', 'Litch #1 and #2, stays in checking'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['floatCap', 'Float kept in checking', 'Cap. Everything above goes to the Emergency Fund. 0 means no cap'], ['floatTarget', 'Monthly bills base', 'Sets the Emergency Fund goal. 0 follows your bills'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
+    const cfgDefs = [['groceries', 'Groceries cap', 'Funded at month end'], ['gas', 'Car cap', 'Funded on the 15th'], ['lifeF', 'Life cap per Liv check', 'Refilled on the 15th and at month end'], ['health', 'Health & Pet per month', 'Added at month end'], ['healthMax', 'Health & Pet build-up ceiling', 'Stops adding once it holds this much'], ['fun', 'Fun money per Liv check', 'Both people combined'], ['rent', 'Rent-holding per Litch check', 'Checks #1 and #2'], ['family', 'Family envelope per check', 'Litch #1 and #2, stays in checking'], ['vacation', 'Vacation per month', 'Liv month end'], ['carRepay', 'Car repayment per month', 'Until repaid'], ['ef2', 'EF stage 2 per month', 'After stage 1 is full'], ['floatCap', 'Float kept in checking', 'Cap. Everything above goes to the Emergency Fund. 0 means no cap'], ['floatTarget', 'Monthly bills base', 'Sets the Emergency Fund goal. 0 follows your bills'], ['carTarget', 'Car Fund target', ''], ['houseTarget', 'House target', ''], ['weddingTarget', 'Wedding cash target', '']];
     const cfgRows = cfgDefs.map(([k, l, sub]) => ({ label: l, sub, value: cfg[k], onInput: e => this.setCfg(k, e.target.value) }));
 
     const pendingRows = s.pending.map(p => ({ label: p.label, amount: this.fmt(p.amount), sub: 'Lands ' + this.dateLabel(new Date(p.lands + 'T00:00:00')), onLand: () => this.landOne(p.id) }));
@@ -1310,7 +1313,7 @@ class Component extends DCLogic {
     // insights
     const alerts = [];
     const RED = { bg: P.clayBg, fg: P.clayFg }, PAPER = { bg: P.paper, fg: P.ink }, BLUE = { bg: P.mint, fg: P.mintFg };
-    [['Groceries', 'groceries'], ['Life', 'lifeF'], ['Health & Pet', 'health']].forEach(([n, k]) => {
+    [['Groceries', 'groceries'], ['Life', 'lifeF']].forEach(([n, k]) => {
       if (eb[k] < 0) alerts.push({ ...RED, title: `${n} is ${this.fmt(-eb[k])} overspent`, message: `This is your own envelope running below zero, not a bank fee. It is already spent, so it comes off the next refill instead of leaving checking again. Next refill is ${this.fmt(caps[k] + eb[k])} (cap minus overage).` });
     });
     if (safeToMove < -0.5) alerts.push({ ...RED, title: `Safe to Move is ${this.fmt(safeToMove)}`, message: 'Checking is short before the next check. The next check closes this gap before anything reaches the cascade.' });
@@ -1335,7 +1338,7 @@ class Component extends DCLogic {
         return { name: `Litch, check #${n} of month`, amount: '~$2,175', date: when, allocation: n <= 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family envelope ${this.fmt(cfg.family)}, rest to cascade` : n === 2 ? `Rent-holding ${this.fmt(cfg.rent)}, Family ${this.fmt(cfg.family)}, rest to cascade` : 'No fixed jobs. All of it goes to the cascade.' };
       }
       if (p.kind === 'liv15') return { name: 'Liv, 15th', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 16th to month-end bills (${this.fmt(this.reserveWindow('liv15'))}), Car and Life to cap, rest to cascade` };
-      return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Groceries, Health & Pet and Life to cap, Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
+      return { name: 'Liv, month end', amount: '$2,720.17', date: when, allocation: `Fun ${this.fmt(cfg.fun)}, reserve 1st to 15th bills (${this.fmt(this.reserveWindow('livEnd'))}), Groceries and Life to cap, Health & Pet +${this.fmt(cfg.health)} (builds to ${this.fmt(cfg.healthMax || 1000)}), Vacation ${this.fmt(cfg.vacation)}, Car repayment ${this.fmt(cfg.carRepay)}, rest to cascade` };
     });
 
     const income = 2 * 2175 + 2 * 2720.17;
@@ -1353,7 +1356,7 @@ class Component extends DCLogic {
 
     const groupA = { gas: 1 }, half = { lifeF: 1 };
     const paceNames = Component.ENV_NAMES;
-    const paceItems = ['groceries', 'gas', 'lifeF', 'health'].map(k => {
+    const paceItems = ['groceries', 'gas', 'lifeF'].map(k => {
       const cap = caps[k], spent = cap - eb[k];
       const elapsed = groupA[k] ? Math.max(0.05, Math.min(1, (d - 15) / (dim - 15))) : half[k] ? Math.max(0.05, Math.min(1, d <= 15 ? d / 15 : (d - 15) / (dim - 15))) : Math.max(0.05, d / dim);
       const hot = (spent / cap) / elapsed > 1.15;
@@ -1597,8 +1600,13 @@ class Component extends DCLogic {
         const days = Math.round((due - td) / 86400000); if (days <= 7) q.push({ k: 'carddue', card: k, bal, due, days }); }); }
     Object.keys(s.envelopeBalances || {}).forEach(k => { const v = s.envelopeBalances[k]; if (typeof v === 'number' && v < -0.004 && Component.ENV_NAMES[k] && !(s.overAck || {})[k]) q.push({ k: 'over', env: k, v }); });
     if (safe > 0.5) q.push({ k: 'free' });
+    const qKey = x => x.k + ':' + (x.card || x.env || (x.b && x.b.name) || (x.p && x.p.id) || (x.o && x.o.id) || (x.i && x.i.id) || '');
+    let snz = {}; try { snz = JSON.parse(localStorage.getItem('lv_snooze') || '{}') || {}; } catch (e) {}
+    const todayKey = today.toDateString();
+    q = q.filter(x => x.k === 'check' || snz[qKey(x)] !== todayKey);
     if (q.length > 1) { const r0 = (s.qrot || 0) % q.length; q = q.slice(r0).concat(q.slice(0, r0)); }
-    const later = q.length > 1 ? [{ label: 'Later', onClick: () => this.setState({ qrot: (s.qrot || 0) + 1, openSort: null }) }] : [];
+    const later = (q[0] && q[0].k === 'check') ? (q.length > 1 ? [{ label: 'Later', onClick: () => this.setState({ qrot: (s.qrot || 0) + 1, openSort: null }) }] : [])
+      : q[0] ? [{ label: 'Hide until tomorrow', onClick: () => { const n = {}; Object.keys(snz).forEach(k => { if (snz[k] === todayKey) n[k] = snz[k]; }); n[qKey(q[0])] = todayKey; try { localStorage.setItem('lv_snooze', JSON.stringify(n)); } catch (e) {} this.setState({ snzTick: (s.snzTick || 0) + 1, openSort: null }); } }] : [];
     const cur = q[0]; let c = null;
     if (cur && cur.k === 'check') { const done = openSteps === 0; c = { kick: 'Payday check', title: check.name, amt: fmt(check.amount), sub: done ? 'Every step is done.' : openSteps + ' step' + (openSteps === 1 ? '' : 's') + ' left. Here is where it goes.', lines: v.checkRows.map(r => ({ label: r.label, amount: r.amount, opacity: r.opacity })), prim: done ? 'Finish the check' : 'Confirm all steps', go: done ? this.finishCheck : this.confirmAll, alts: done ? later : [{ label: 'Review step by step', onClick: goTab('plan', { planTab: 'pay' }) }, ...later] }; }
     else if (cur && cur.k === 'pay') c = { kick: 'Payday', title: pcNames[pcNow[0].kind], amt: '', sub: 'Lands today. Start the check to see where it goes.', prim: 'Start the check', go: () => { this.startCheck(); }, alts: [{ label: 'Choose amount', onClick: goTab('plan', { planTab: 'pay' }) }, ...later] };
@@ -1606,7 +1614,7 @@ class Component extends DCLogic {
     else if (cur && cur.k === 'pend') { const p = cur.p; c = { kick: 'Did it land?', title: p.label, amt: fmt(p.amount), sub: 'Expected ' + this.dateLabel(new Date(p.lands + 'T00:00:00')) + '. Comes off Safe to spend until then.', prim: 'Yes, it landed', go: () => this.landOne(p.id), alts: later }; }
     else if (cur && cur.k === 'owed') { const o = cur.o; c = { kick: 'Did it land?', title: o.label, amt: '+' + fmt(o.amount), sub: 'Goes to ' + (E[o.env] || (o.env === 'float' ? 'Float' : 'free money')), prim: 'Yes, it landed', go: () => this.owedPaid(o.id), alts: [{ label: o.env === 'float' ? 'Send to ' + (E[o.envWas] || 'its envelope') + ' instead' : 'Send to Float instead', onClick: () => this.owedToFloat(o.id) }, ...later] }; }
     else if (cur && cur.k === 'bill') { const b = cur.b; c = { kick: 'Due today', title: b.name.replace(' (annual)', ''), amt: fmt(b.amount), sub: 'Mark it paid once it leaves Ally.', prim: 'Mark paid', go: () => this.toggleBill(b.name), alts: later }; }
-    else if (cur && cur.k === 'carddue') { const k = cur.card; c = { kick: cur.days === 0 ? 'Card due today' : 'Card due in ' + cur.days + ' day' + (cur.days === 1 ? '' : 's'), title: Component.CARD_NAMES[k], amt: fmt(cur.bal), sub: 'Pay the full statement balance by ' + cur.due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' so it costs no interest. Leave 2 business days for the payment to post.', prim: 'Log a payment', go: () => this.payCard(k), alts: later }; }
+    else if (cur && cur.k === 'carddue') { const k = cur.card; c = { kick: cur.days === 0 ? 'Card due today' : 'Card due in ' + cur.days + ' day' + (cur.days === 1 ? '' : 's'), title: Component.CARD_NAMES[k], amt: fmt(cur.bal), sub: (Component.CARD_PAYFULL[k] ? 'Pay the full statement balance by ' + cur.due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' so it costs no interest.' : 'Pay at least the minimum by ' + cur.due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' to avoid a late fee. The cascade pays the rest down.') + ' Leave 2 business days for the payment to post.', prim: 'Log a payment', go: () => this.payCard(k), alts: later }; }
     else if (cur && cur.k === 'over') { const k = cur.env; c = { kick: 'Envelope overspent', title: Component.ENV_NAMES[k] + ' is over', amt: fmt(cur.v), sub: 'The next refill is cut by this much. Do not move money in from another bucket or free money to cover it.', prim: 'Got it', go: () => this.setState({ overAck: { ...(s.overAck || {}), [k]: true } }), alts: later }; }
     else if (cur) c = { kick: 'Give it a job', title: 'Free money', amt: fmt(safe), sub: 'Not assigned to Float, an envelope or savings. Move it, then make the same move in Ally.', prim: 'Move it', go: () => this.setState({ sheet: 'move', mvTo: 'float', mvAmt: String(Math.floor(safe * 100) / 100) }), alts: later };
     const qRow = x => x.k === 'check' ? { title: check.name, kick: 'Payday check', amt: fmt(check.amount) } : x.k === 'pay' ? { title: pcNames[pcNow[0].kind], kick: 'Payday', amt: '' } : x.k === 'sort' ? { title: x.i.label, kick: 'Sort · ' + E[sg(x.i)], amt: fmt(x.i.sign * x.i.amount) } : x.k === 'pend' ? { title: x.p.label, kick: 'Did it land?', amt: fmt(x.p.amount) } : x.k === 'owed' ? { title: x.o.label, kick: 'Did it land?', amt: '+' + fmt(x.o.amount) } : x.k === 'bill' ? { title: x.b.name.replace(' (annual)', ''), kick: 'Due today', amt: fmt(x.b.amount) } : x.k === 'carddue' ? { title: Component.CARD_NAMES[x.card], kick: x.days === 0 ? 'Card due today' : 'Card due in ' + x.days + ' day' + (x.days === 1 ? '' : 's'), amt: fmt(x.bal) } : x.k === 'over' ? { title: Component.ENV_NAMES[x.env] + ' is over', kick: 'Envelope overspent', amt: fmt(x.v) } : { title: 'Free money', kick: 'Give it a job', amt: fmt(safe) };
